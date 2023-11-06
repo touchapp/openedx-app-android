@@ -3,6 +3,10 @@ package org.openedx.course.presentation.unit.container
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.openedx.core.BaseViewModel
 import org.openedx.core.BlockType
 import org.openedx.core.domain.model.Block
@@ -15,10 +19,6 @@ import org.openedx.core.system.notifier.CourseNotifier
 import org.openedx.core.system.notifier.CourseSectionChanged
 import org.openedx.course.domain.interactor.CourseInteractor
 import org.openedx.course.presentation.CourseAnalytics
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 class CourseUnitContainerViewModel(
     private val interactor: CourseInteractor,
@@ -29,7 +29,7 @@ class CourseUnitContainerViewModel(
 
     private val blocks = ArrayList<Block>()
 
-    private var currentIndex = 0
+    var currentIndex = 0
     private var currentVerticalIndex = 0
     private var currentSectionIndex = -1
 
@@ -55,11 +55,16 @@ class CourseUnitContainerViewModel(
     val currentBlock: LiveData<Block?>
         get() = _currentBlock
 
+    private val _selectBlockDialogShowed = MutableLiveData<Boolean>()
+    val selectBlockDialogShowed: LiveData<Boolean>
+        get() = _selectBlockDialogShowed
+
     var nextButtonText = ""
     var hasNextBlock = false
     private var courseName = ""
 
     private val descendants = mutableListOf<String>()
+    private val descendantsBlocks = mutableListOf<Block>()
 
     fun loadBlocks(mode: CourseViewMode) {
         try {
@@ -91,6 +96,8 @@ class CourseUnitContainerViewModel(
                 }
                 if (block.descendants.isNotEmpty()) {
                     descendants.clearAndAddAll(block.descendants)
+                    descendantsBlocks.clearAndAddAll(blocks.filter { block.descendants.contains(it.id) })
+
                 } else {
                     setNextVerticalIndex()
                 }
@@ -137,23 +144,9 @@ class CourseUnitContainerViewModel(
         return blocks[currentIndex]
     }
 
-    fun moveToNextBlock(): Block? {
-        for (i in currentIndex + 1 until descendants.size) {
-            val block = blocks.firstOrNull { descendants[i] == it.id }
-            currentIndex = i
-            if (currentVerticalIndex != -1) {
-                _indexInContainer.value = currentIndex
-            }
-            _currentBlock.value = block
-            return block
-        }
-        return null
-    }
-
-    fun moveToPrevBlock(): Block? {
-        for (i in currentIndex - 1 downTo 0) {
-            val block = blocks.firstOrNull { descendants[i] == it.id }
-            currentIndex = i
+    fun moveToBlock(index: Int): Block? {
+        descendantsBlocks.getOrNull(index)?.let { block ->
+            currentIndex = index
             if (currentVerticalIndex != -1) {
                 _indexInContainer.value = currentIndex
             }
@@ -198,5 +191,13 @@ class CourseUnitContainerViewModel(
 
     fun finishVerticalBackClickedEvent() {
         analytics.finishVerticalBackClickedEvent(courseId, courseName)
+    }
+
+    fun showSelectBlockDialog() {
+        _selectBlockDialogShowed.value = true
+    }
+
+    fun hideSelectBlockDialog() {
+        _selectBlockDialogShowed.value = false
     }
 }

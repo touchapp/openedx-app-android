@@ -7,6 +7,7 @@ import android.view.View
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -26,7 +27,6 @@ import org.openedx.core.extension.serializable
 import org.openedx.core.presentation.course.CourseViewMode
 import org.openedx.core.presentation.global.InsetHolder
 import org.openedx.core.presentation.global.viewBinding
-import org.openedx.core.ui.BackBtn
 import org.openedx.core.ui.rememberWindowSize
 import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.core.ui.theme.appColors
@@ -35,9 +35,7 @@ import org.openedx.course.databinding.FragmentCourseUnitContainerBinding
 import org.openedx.course.presentation.ChapterEndFragmentDialog
 import org.openedx.course.presentation.CourseRouter
 import org.openedx.course.presentation.DialogListener
-import org.openedx.course.presentation.ui.NavigationUnitsButtons
-import org.openedx.course.presentation.ui.VerticalPageIndicator
-import org.openedx.course.presentation.ui.VideoTitle
+import org.openedx.course.presentation.ui.*
 
 class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_container) {
 
@@ -100,45 +98,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         }
 
         binding.cvNavigationBar.setContent {
-            OpenEdXTheme {
-                var nextButtonText by rememberSaveable {
-                    mutableStateOf(viewModel.nextButtonText)
-                }
-                var hasNextBlock by rememberSaveable {
-                    mutableStateOf(viewModel.hasNextBlock)
-                }
-                var hasPrevBlock by rememberSaveable {
-                    mutableStateOf(viewModel.hasNextBlock)
-                }
-
-                val windowSize = rememberWindowSize()
-
-                updateNavigationButtons { next, hasPrev, hasNext ->
-                    nextButtonText = next
-                    hasPrevBlock = hasPrev
-                    hasNextBlock = hasNext
-                }
-                NavigationUnitsButtons(
-                    windowSize = windowSize,
-                    hasPrevBlock = hasPrevBlock,
-                    nextButtonText = nextButtonText,
-                    hasNextBlock = hasNextBlock,
-                    onPrevClick = {
-                        handlePrevClick { next, hasPrev, hasNext ->
-                            nextButtonText = next
-                            hasPrevBlock = hasPrev
-                            hasNextBlock = hasNext
-                        }
-                    },
-                    onNextClick = {
-                        handleNextClick { next, hasPrev, hasNext ->
-                            nextButtonText = next
-                            hasPrevBlock = hasPrev
-                            hasNextBlock = hasNext
-                        }
-                    }
-                )
-            }
+            NavigationBar()
         }
 
         binding.cvCount.setContent {
@@ -160,13 +120,45 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         }
 
         binding.btnBack.setContent {
-            OpenEdXTheme {
-                BackBtn(modifier = Modifier.statusBarsPadding()) {
+            val block by viewModel.currentBlock.observeAsState()
+            val blockShowed by viewModel.selectBlockDialogShowed.observeAsState()
+
+            CourseUnitToolbar(
+                title = requireArguments().getString(ARG_COURSE_NAME, ""),
+                block = block,
+                blockListShowed = blockShowed,
+                onBlockClick = { handleBlockClick() },
+                onBackClick = {
                     requireActivity().supportFragmentManager.popBackStack()
+                }
+            )
+        }
+
+        binding.unitBlocksBg?.setOnClickListener { handleBlockClick() }
+
+        binding.unitBlocksList?.setContent {
+            val index by viewModel.indexInContainer.observeAsState(0)
+            CourseUnitBlocksList(
+                unitBlocks = viewModel.getUnitBlocks(),
+                selectedPage = index
+            ) { nextIndex ->
+                if (nextIndex > viewModel.currentIndex) {
+                    handleNextClick(nextIndex) { _, _, _ ->
+
+                    }
+                } else if (nextIndex < viewModel.currentIndex) {
+                    handlePrevClick(nextIndex) { _, _, _ ->
+
+                    }
+                }
+
+                handleBlockClick()
+
+                binding.cvNavigationBar.setContent {
+                    NavigationBar()
                 }
             }
         }
-
     }
 
     private fun updateNavigationButtons(updatedData: (String, Boolean, Boolean) -> Unit) {
@@ -198,15 +190,17 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         binding.viewPager.isUserInputEnabled = false
     }
 
-    private fun handlePrevClick(buttonChanged: (String, Boolean, Boolean) -> Unit) {
+    private fun handlePrevClick(
+        prevIndex: Int = viewModel.currentIndex - 1,
+        buttonChanged: (String, Boolean, Boolean) -> Unit
+    ) {
         if (!restrictDoubleClick()) {
-            val block = viewModel.moveToPrevBlock()
+            val block = viewModel.moveToBlock(prevIndex)
             if (block != null) {
                 viewModel.prevBlockClickedEvent(block.blockId, block.displayName)
                 if (!block.type.isContainer()) {
                     binding.viewPager.setCurrentItem(
-                        binding.viewPager.currentItem - 1,
-                        true
+                        viewModel.currentIndex, true
                     )
                     updateNavigationButtons { next, hasPrev, hasNext ->
                         buttonChanged(next, hasPrev, hasNext)
@@ -216,15 +210,17 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         }
     }
 
-    private fun handleNextClick(buttonChanged: (String, Boolean, Boolean) -> Unit) {
+    private fun handleNextClick(
+        nextIndex: Int = viewModel.currentIndex + 1,
+        buttonChanged: (String, Boolean, Boolean) -> Unit
+    ) {
         if (!restrictDoubleClick()) {
-            val block = viewModel.moveToNextBlock()
+            val block = viewModel.moveToBlock(nextIndex)
             if (block != null) {
                 viewModel.nextBlockClickedEvent(block.blockId, block.displayName)
                 if (!block.type.isContainer()) {
                     binding.viewPager.setCurrentItem(
-                        binding.viewPager.currentItem + 1,
-                        true
+                        viewModel.currentIndex, true
                     )
                     updateNavigationButtons { next, hasPrev, hasNext ->
                         buttonChanged(next, hasPrev, hasNext)
@@ -276,6 +272,62 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                     ChapterEndFragmentDialog::class.simpleName
                 )
             }
+        }
+    }
+
+    private fun handleBlockClick() {
+        if (binding.unitBlocksCardView?.visibility == View.VISIBLE) {
+            binding.unitBlocksCardView?.visibility = View.GONE
+            binding.unitBlocksBg?.visibility = View.GONE
+            viewModel.hideSelectBlockDialog()
+
+        } else {
+            binding.unitBlocksCardView?.visibility = View.VISIBLE
+            binding.unitBlocksBg?.visibility = View.VISIBLE
+            viewModel.showSelectBlockDialog()
+        }
+    }
+
+    @Composable
+    private fun NavigationBar() {
+        OpenEdXTheme {
+            var nextButtonText by rememberSaveable {
+                mutableStateOf(viewModel.nextButtonText)
+            }
+            var hasNextBlock by rememberSaveable {
+                mutableStateOf(viewModel.hasNextBlock)
+            }
+            var hasPrevBlock by rememberSaveable {
+                mutableStateOf(viewModel.hasNextBlock)
+            }
+
+            updateNavigationButtons { next, hasPrev, hasNext ->
+                nextButtonText = next
+                hasPrevBlock = hasPrev
+                hasNextBlock = hasNext
+            }
+            val windowSize = rememberWindowSize()
+
+            NavigationUnitsButtons(
+                windowSize = windowSize,
+                hasPrevBlock = hasPrevBlock,
+                nextButtonText = nextButtonText,
+                hasNextBlock = hasNextBlock,
+                onPrevClick = {
+                    handlePrevClick { next, hasPrev, hasNext ->
+                        nextButtonText = next
+                        hasPrevBlock = hasPrev
+                        hasNextBlock = hasNext
+                    }
+                },
+                onNextClick = {
+                    handleNextClick { next, hasPrev, hasNext ->
+                        nextButtonText = next
+                        hasPrevBlock = hasPrev
+                        hasNextBlock = hasNext
+                    }
+                }
+            )
         }
     }
 
