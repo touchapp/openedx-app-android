@@ -4,9 +4,9 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -28,10 +28,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 import org.openedx.core.BlockType
 import org.openedx.core.R
 import org.openedx.core.UIMessage
-import org.openedx.core.domain.model.*
+import org.openedx.core.domain.model.Block
+import org.openedx.core.domain.model.BlockCounts
+import org.openedx.core.domain.model.CourseStructure
+import org.openedx.core.domain.model.CoursewareAccess
 import org.openedx.core.presentation.course.CourseViewMode
 import org.openedx.core.ui.*
 import org.openedx.core.ui.theme.OpenEdXTheme
@@ -42,11 +48,9 @@ import org.openedx.course.presentation.CourseRouter
 import org.openedx.course.presentation.container.CourseContainerFragment
 import org.openedx.course.presentation.ui.CourseImageHeader
 import org.openedx.course.presentation.ui.CourseSectionCard
-import org.koin.android.ext.android.inject
-import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.koin.core.parameter.parametersOf
+import org.openedx.course.presentation.ui.CourseSubsectionItem
 import java.io.File
-import java.util.*
+import java.util.Date
 
 class CourseVideosFragment : Fragment() {
 
@@ -92,11 +96,15 @@ class CourseVideosFragment : Fragment() {
                         (parentFragment as CourseContainerFragment).updateCourseStructure(false)
                     },
                     onItemClick = { block ->
-                        router.navigateToCourseSubsections(
+                        viewModel.switchCourseSections(block.id)
+                    },
+                    onSectionClick = { block ->
+                        viewModel.verticalClickedEvent(block.blockId, block.displayName)
+                        router.navigateToCourseContainer(
                             requireActivity().supportFragmentManager,
+                            block.id,
                             courseId = viewModel.courseId,
-                            blockId = block.id,
-                            title = block.displayName,
+                            courseName = block.displayName,
                             mode = CourseViewMode.VIDEOS
                         )
                     },
@@ -144,13 +152,14 @@ class CourseVideosFragment : Fragment() {
 @Composable
 private fun CourseVideosScreen(
     windowSize: WindowSize,
-    uiState: CourseVideosUIState,
+    uiState: CourseVideosUIState?,
     uiMessage: UIMessage?,
     isUpdating: Boolean,
     hasInternetConnection: Boolean,
     onSwipeRefresh: () -> Unit,
     courseTitle: String,
     onItemClick: (Block) -> Unit,
+    onSectionClick: (Block) -> Unit,
     onReloadClick: () -> Unit,
     onBackClick: () -> Unit,
     onDownloadClick: (Block) -> Unit
@@ -279,33 +288,69 @@ private fun CourseVideosScreen(
                                                 courseCertificate = uiState.courseStructure.certificate
                                             )
                                         }
-                                        items(uiState.courseStructure.blockData) { block ->
-                                            Column(listPadding) {
-                                                if (block.type == BlockType.CHAPTER) {
-                                                    Text(
-                                                        modifier = Modifier.padding(
-                                                            top = 36.dp,
-                                                            bottom = 8.dp
-                                                        ),
-                                                        text = block.displayName,
-                                                        style = MaterialTheme.appTypography.titleMedium,
-                                                        color = MaterialTheme.appColors.textPrimaryVariant
-                                                    )
-                                                } else {
-                                                    CourseSectionCard(
-                                                        block = block,
-                                                        downloadedState = uiState.downloadedState[block.id],
-                                                        onItemClick = { blockSelected ->
-                                                            onItemClick(blockSelected)
-                                                        },
-                                                        onDownloadClick = onDownloadClick
-                                                    )
-                                                    Divider()
+
+                                        uiState.courseStructure.blockData.forEach { block ->
+                                            val courseSections = uiState.courseSections[block.id]
+
+                                            item {
+                                                Column(listPadding) {
+                                                    if (block.type == BlockType.CHAPTER) {
+                                                        Text(
+                                                            modifier = Modifier.padding(
+                                                                top = 36.dp,
+                                                                bottom = 8.dp
+                                                            ),
+                                                            text = block.displayName,
+                                                            style = MaterialTheme.appTypography.titleMedium,
+                                                            color = MaterialTheme.appColors.textPrimaryVariant
+                                                        )
+                                                    } else {
+                                                        CourseSectionCard(
+                                                            block = block,
+                                                            downloadedState = uiState.downloadedState[block.id],
+                                                            onItemClick = { blockSelected ->
+                                                                onItemClick(blockSelected)
+                                                            },
+                                                            onDownloadClick = onDownloadClick,
+                                                            arrowDegrees = if (courseSections?.expanded == true) -90f else 90f
+                                                        )
+                                                        Divider()
+                                                    }
+                                                }
+                                            }
+
+                                            courseSections?.blocks?.forEach { sectionBlock ->
+                                                item {
+                                                    Column(listPadding) {
+                                                        AnimatedVisibility(
+                                                            visible = courseSections.expanded
+                                                        ) {
+                                                            Column {
+                                                                CourseSubsectionItem(
+                                                                    block = sectionBlock,
+                                                                    downloadedState = uiState.downloadedState[block.id],
+                                                                    onClick = { sectionBlock ->
+                                                                        onSectionClick(sectionBlock)
+                                                                    },
+                                                                    onDownloadClick = onDownloadClick
+                                                                )
+                                                                Box(
+                                                                    modifier = Modifier.padding(
+                                                                        start = 20.dp
+                                                                    )
+                                                                ) {
+                                                                    Divider()
+                                                                }
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+
+                                else -> {}
                             }
                         }
                         PullRefreshIndicator(
@@ -344,10 +389,12 @@ private fun CourseVideosScreenPreview() {
             uiMessage = null,
             uiState = CourseVideosUIState.CourseData(
                 mockCourseStructure,
-                emptyMap()
+                emptyMap(),
+                mapOf()
             ),
             courseTitle = "Course",
             onItemClick = { },
+            onSectionClick = {},
             onBackClick = {},
             hasInternetConnection = true,
             isUpdating = false,
@@ -371,6 +418,7 @@ private fun CourseVideosScreenEmptyPreview() {
             ),
             courseTitle = "Course",
             onItemClick = { },
+            onSectionClick = {},
             onBackClick = {},
             onSwipeRefresh = {},
             onReloadClick = {},
@@ -391,10 +439,12 @@ private fun CourseVideosScreenTabletPreview() {
             uiMessage = null,
             uiState = CourseVideosUIState.CourseData(
                 mockCourseStructure,
-                emptyMap()
+                emptyMap(),
+                mapOf()
             ),
             courseTitle = "Course",
             onItemClick = { },
+            onSectionClick = {},
             onBackClick = {},
             onSwipeRefresh = {},
             onReloadClick = {},

@@ -4,6 +4,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import org.openedx.core.BlockType
 import org.openedx.core.SingleEventLiveData
 import org.openedx.core.UIMessage
@@ -18,7 +19,8 @@ import org.openedx.core.system.notifier.CourseNotifier
 import org.openedx.core.system.notifier.CourseStructureUpdated
 import org.openedx.course.R
 import org.openedx.course.domain.interactor.CourseInteractor
-import kotlinx.coroutines.launch
+import org.openedx.course.presentation.CourseAnalytics
+import org.openedx.course.presentation.outline.CourseSection
 
 class CourseVideoViewModel(
     val courseId: String,
@@ -27,12 +29,13 @@ class CourseVideoViewModel(
     private val networkConnection: NetworkConnection,
     private val preferencesManager: CorePreferences,
     private val notifier: CourseNotifier,
+    private val analytics: CourseAnalytics,
     downloadDao: DownloadDao,
     workerController: DownloadWorkerController
 ) : BaseDownloadViewModel(downloadDao, preferencesManager, workerController) {
 
-    private val _uiState = MutableLiveData<CourseVideosUIState>()
-    val uiState: LiveData<CourseVideosUIState>
+    private val _uiState = MutableLiveData<CourseVideosUIState?>()
+    val uiState: LiveData<CourseVideosUIState?>
         get() = _uiState
 
     var courseTitle = ""
@@ -47,6 +50,8 @@ class CourseVideoViewModel(
 
     val hasInternetConnection: Boolean
         get() = networkConnection.isOnline()
+
+    private val courseSections = mutableMapOf<String, CourseSection>()
 
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
@@ -66,7 +71,8 @@ class CourseVideoViewModel(
                     val state = _uiState.value as CourseVideosUIState.CourseData
                     _uiState.value = CourseVideosUIState.CourseData(
                         courseStructure = state.courseStructure,
-                        downloadedState = it.toMap()
+                        downloadedState = it.toMap(),
+                        courseSections = courseSections
                     )
                 }
             }
@@ -112,8 +118,30 @@ class CourseVideoViewModel(
                 courseStructure = courseStructure.copy(blockData = sortBlocks(blocks))
                 initDownloadModelsStatus()
                 _uiState.value =
-                    CourseVideosUIState.CourseData(courseStructure, getDownloadModelsStatus())
+                    CourseVideosUIState.CourseData(
+                        courseStructure, getDownloadModelsStatus(), courseSections
+                    )
             }
+        }
+    }
+
+    fun switchCourseSections(blockId: String) {
+        courseSections[blockId]?.expanded = !(courseSections[blockId]?.expanded ?: false)
+        if (_uiState.value is CourseVideosUIState.CourseData) {
+            val state = _uiState.value as CourseVideosUIState.CourseData
+            _uiState.value = null
+            _uiState.value = CourseVideosUIState.CourseData(
+                courseStructure = state.courseStructure,
+                downloadedState = state.downloadedState,
+                courseSections = courseSections
+            )
+        }
+    }
+
+    fun verticalClickedEvent(blockId: String, blockName: String) {
+        val currentState = uiState.value
+        if (currentState is CourseVideosUIState.CourseData) {
+            analytics.verticalClickedEvent(courseId, courseTitle, blockId, blockName)
         }
     }
 
@@ -126,6 +154,8 @@ class CourseVideoViewModel(
                 block.descendants.forEach { descendant ->
                     blocks.find { it.id == descendant }?.let {
                         resultBlocks.add(it)
+                        courseSections[it.id] =
+                            getCourseSection(blocks, it.id)
                         addDownloadableChildrenForSequentialBlock(it)
                     }
                 }
@@ -134,5 +164,23 @@ class CourseVideoViewModel(
         return resultBlocks.toList()
     }
 
-
+    private fun getCourseSection(blocks: List<Block>, blockId: String): CourseSection {
+        val resultList = mutableListOf<Block>()
+        if (blocks.isEmpty()) return CourseSection(emptyList())
+        val selectedBlock = blocks.first {
+            it.id == blockId
+        }
+        for (descendant in selectedBlock.descendants) {
+            val blockDescendant = blocks.find {
+                it.id == descendant
+            }
+            if (blockDescendant != null) {
+                if (blockDescendant.type == BlockType.VERTICAL) {
+                    resultList.add(blockDescendant)
+                    addDownloadableChildrenForVerticalBlock(blockDescendant)
+                }
+            } else continue
+        }
+        return CourseSection(resultList)
+    }
 }

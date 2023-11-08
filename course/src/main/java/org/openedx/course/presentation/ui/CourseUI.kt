@@ -131,7 +131,8 @@ fun CourseSectionCard(
     block: Block,
     downloadedState: DownloadedState?,
     onItemClick: (Block) -> Unit,
-    onDownloadClick: (Block) -> Unit
+    onDownloadClick: (Block) -> Unit,
+    arrowDegrees: Float = 0f
 ) {
     val iconModifier = Modifier.size(24.dp)
 
@@ -139,10 +140,9 @@ fun CourseSectionCard(
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(80.dp)
+                .height(60.dp)
                 .padding(
-                    horizontal = 20.dp,
-                    vertical = 24.dp
+                    vertical = 8.dp
                 ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -208,8 +208,94 @@ fun CourseSectionCard(
                     }
                 }
                 CardArrow(
-                    degrees = 0f
+                    degrees = arrowDegrees
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun CourseSubsectionItem(
+    block: Block,
+    downloadedState: DownloadedState?,
+    onClick: (Block) -> Unit,
+    onDownloadClick: (Block) -> Unit
+) {
+    val icon =
+        if (block.completion == 1.0) painterResource(R.drawable.course_ic_task_alt) else painterResource(
+            id = getUnitBlockIcon(block)
+        )
+    val iconColor =
+        if (block.completion == 1.0) MaterialTheme.appColors.primary else MaterialTheme.appColors.onSurface
+
+    val iconModifier = Modifier.size(24.dp)
+
+    Column(Modifier.clickable { onClick(block) }) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .padding(vertical = 16.dp)
+                .padding(start = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Icon(
+                painter = icon,
+                contentDescription = null,
+                tint = iconColor
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                modifier = Modifier.weight(1f),
+                text = block.displayName,
+                style = MaterialTheme.appTypography.titleSmall,
+                color = MaterialTheme.appColors.textPrimary,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Row(
+                modifier = Modifier.fillMaxHeight(),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (downloadedState == DownloadedState.DOWNLOADED || downloadedState == DownloadedState.NOT_DOWNLOADED) {
+                    val iconPainter = if (downloadedState == DownloadedState.DOWNLOADED) {
+                        painterResource(id = R.drawable.course_ic_remove_download)
+                    } else {
+                        painterResource(id = R.drawable.course_ic_start_download)
+                    }
+                    IconButton(modifier = iconModifier,
+                        onClick = { onDownloadClick(block) }) {
+                        Icon(
+                            painter = iconPainter,
+                            contentDescription = null,
+                            tint = MaterialTheme.appColors.textPrimary
+                        )
+                    }
+                } else if (downloadedState != null) {
+                    Box(contentAlignment = Alignment.Center) {
+                        if (downloadedState == DownloadedState.DOWNLOADING || downloadedState == DownloadedState.WAITING) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(34.dp),
+                                backgroundColor = Color.LightGray,
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.appColors.primary
+                            )
+                        }
+                        IconButton(
+                            modifier = iconModifier.padding(top = 2.dp),
+                            onClick = { onDownloadClick(block) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.appColors.error
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -802,3 +888,12 @@ private val mockChapterBlock = Block(
     descendantsType = BlockType.CHAPTER,
     completion = 0.0
 )
+
+private fun getUnitBlockIcon(block: Block): Int {
+    return when (block.descendantsType) {
+        BlockType.VIDEO -> R.drawable.ic_course_video
+        BlockType.PROBLEM -> R.drawable.ic_course_pen
+        BlockType.DISCUSSION -> R.drawable.ic_course_discussion
+        else -> R.drawable.ic_course_block
+    }
+}

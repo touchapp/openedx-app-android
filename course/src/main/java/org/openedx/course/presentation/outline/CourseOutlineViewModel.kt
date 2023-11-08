@@ -4,6 +4,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import org.openedx.core.BlockType
 import org.openedx.core.R
 import org.openedx.core.SingleEventLiveData
@@ -21,7 +22,7 @@ import org.openedx.core.system.notifier.CourseNotifier
 import org.openedx.core.system.notifier.CourseStructureUpdated
 import org.openedx.course.domain.interactor.CourseInteractor
 import org.openedx.course.presentation.CourseAnalytics
-import kotlinx.coroutines.launch
+import org.openedx.course.presentation.section.CourseSectionUIState
 import org.openedx.course.R as courseR
 
 class CourseOutlineViewModel(
@@ -36,8 +37,8 @@ class CourseOutlineViewModel(
     workerController: DownloadWorkerController
 ) : BaseDownloadViewModel(downloadDao, preferencesManager, workerController) {
 
-    private val _uiState = MutableLiveData<CourseOutlineUIState>(CourseOutlineUIState.Loading)
-    val uiState: LiveData<CourseOutlineUIState>
+    private val _uiState = MutableLiveData<CourseOutlineUIState?>(CourseOutlineUIState.Loading)
+    val uiState: LiveData<CourseOutlineUIState?>
         get() = _uiState
 
     private val _uiMessage = SingleEventLiveData<UIMessage>()
@@ -58,6 +59,8 @@ class CourseOutlineViewModel(
     val hasInternetConnection: Boolean
         get() = networkConnection.isOnline()
 
+    private val courseSections = mutableMapOf<String, CourseSection>()
+
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
         viewModelScope.launch {
@@ -77,7 +80,8 @@ class CourseOutlineViewModel(
                     _uiState.value = CourseOutlineUIState.CourseData(
                         courseStructure = state.courseStructure,
                         downloadedState = it.toMap(),
-                        resumeBlock = state.resumeBlock
+                        resumeBlock = state.resumeBlock,
+                        courseSections = courseSections
                     )
                 }
             }
@@ -115,6 +119,22 @@ class CourseOutlineViewModel(
         getCourseDataInternal()
     }
 
+    fun switchCourseSections(blockId: String): Boolean {
+        courseSections[blockId]?.expanded = !(courseSections[blockId]?.expanded ?: false)
+        if (_uiState.value is CourseOutlineUIState.CourseData) {
+            val state = _uiState.value as CourseOutlineUIState.CourseData
+            _uiState.value = null
+            _uiState.value = CourseOutlineUIState.CourseData(
+                courseStructure = state.courseStructure,
+                downloadedState = state.downloadedState,
+                resumeBlock = state.resumeBlock,
+                courseSections = courseSections
+            )
+        }
+
+        return courseSections[blockId]?.expanded ?: false
+    }
+
     private fun getCourseDataInternal() {
         viewModelScope.launch {
             try {
@@ -133,7 +153,8 @@ class CourseOutlineViewModel(
                 _uiState.value = CourseOutlineUIState.CourseData(
                     courseStructure = courseStructure,
                     downloadedState = getDownloadModelsStatus(),
-                    resumeBlock = getResumeBlock(blocks, courseStatus.lastVisitedBlockId)
+                    resumeBlock = getResumeBlock(blocks, courseStatus.lastVisitedBlockId),
+                    courseSections = courseSections
                 )
             } catch (e: Exception) {
                 if (e.isInternetError()) {
@@ -159,12 +180,34 @@ class CourseOutlineViewModel(
                 block.descendants.forEach { descendant ->
                     blocks.find { it.id == descendant }?.let { sequentialBlock ->
                         resultBlocks.add(sequentialBlock)
+                        courseSections[sequentialBlock.id] =
+                            getCourseSection(blocks, sequentialBlock.id)
                         addDownloadableChildrenForSequentialBlock(sequentialBlock)
                     }
                 }
             }
         }
         return resultBlocks.toList()
+    }
+
+    private fun getCourseSection(blocks: List<Block>, blockId: String): CourseSection {
+        val resultList = mutableListOf<Block>()
+        if (blocks.isEmpty()) return CourseSection(emptyList())
+        val selectedBlock = blocks.first {
+            it.id == blockId
+        }
+        for (descendant in selectedBlock.descendants) {
+            val blockDescendant = blocks.find {
+                it.id == descendant
+            }
+            if (blockDescendant != null) {
+                if (blockDescendant.type == BlockType.VERTICAL) {
+                    resultList.add(blockDescendant)
+                    addDownloadableChildrenForVerticalBlock(blockDescendant)
+                }
+            } else continue
+        }
+        return CourseSection(resultList)
     }
 
     private fun getResumeBlock(
@@ -199,5 +242,10 @@ class CourseOutlineViewModel(
             )
         }
     }
-
+    fun verticalClickedEvent(blockId: String, blockName: String) {
+        val currentState = uiState.value
+        if (currentState is CourseOutlineUIState.CourseData) {
+            analytics.verticalClickedEvent(courseId, courseTitle, blockId, blockName)
+        }
+    }
 }
