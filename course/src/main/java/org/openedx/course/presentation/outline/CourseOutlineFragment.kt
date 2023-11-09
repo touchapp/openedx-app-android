@@ -86,7 +86,6 @@ class CourseOutlineFragment : Fragment() {
                 CourseOutlineScreen(
                     windowSize = windowSize,
                     uiState = uiState!!,
-                    courseTitle = viewModel.courseTitle,
                     uiMessage = uiMessage,
                     refreshing = refreshing,
                     onSwipeRefresh = {
@@ -123,9 +122,6 @@ class CourseOutlineFragment : Fragment() {
                                 CourseViewMode.FULL
                             )
                         }
-                    },
-                    onBackClick = {
-                        requireActivity().supportFragmentManager.popBackStack()
                     },
                     onDownloadClick = {
                         if (viewModel.isBlockDownloading(it.id)) {
@@ -180,7 +176,6 @@ class CourseOutlineFragment : Fragment() {
 internal fun CourseOutlineScreen(
     windowSize: WindowSize,
     uiState: CourseOutlineUIState,
-    courseTitle: String,
     uiMessage: UIMessage?,
     refreshing: Boolean,
     hasInternetConnection: Boolean,
@@ -189,7 +184,6 @@ internal fun CourseOutlineScreen(
     onItemClick: (Block) -> Unit,
     onSectionClick: (Block) -> Unit,
     onResumeClick: (String) -> Unit,
-    onBackClick: () -> Unit,
     onDownloadClick: (Block) -> Unit
 ) {
     val scaffoldState = rememberScaffoldState()
@@ -240,34 +234,12 @@ internal fun CourseOutlineScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it)
-                .statusBarsInset()
                 .displayCutoutForLandscape(),
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
                 screenWidth
             ) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .zIndex(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    BackBtn {
-                        onBackClick()
-                    }
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 56.dp),
-                        text = courseTitle,
-                        color = MaterialTheme.appColors.textPrimary,
-                        style = MaterialTheme.appTypography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center
-                    )
-                }
                 Spacer(Modifier.height(6.dp))
                 Surface(
                     color = MaterialTheme.appColors.background
@@ -526,7 +498,6 @@ private fun CourseOutlineScreenPreview() {
                 mockChapterBlock,
                 mapOf()
             ),
-            courseTitle = "",
             uiMessage = null,
             refreshing = false,
             hasInternetConnection = true,
@@ -534,7 +505,6 @@ private fun CourseOutlineScreenPreview() {
             onItemClick = {},
             onSectionClick = {},
             onResumeClick = {},
-            onBackClick = {},
             onReloadClick = {},
             onDownloadClick = {}
         )
@@ -554,7 +524,6 @@ private fun CourseOutlineScreenTabletPreview() {
                 mockChapterBlock,
                 mapOf()
             ),
-            courseTitle = "",
             uiMessage = null,
             refreshing = false,
             hasInternetConnection = true,
@@ -562,7 +531,6 @@ private fun CourseOutlineScreenTabletPreview() {
             onItemClick = {},
             onSectionClick = {},
             onResumeClick = {},
-            onBackClick = {},
             onReloadClick = {},
             onDownloadClick = {}
         )

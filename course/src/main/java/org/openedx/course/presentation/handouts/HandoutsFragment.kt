@@ -52,9 +52,6 @@ class HandoutsFragment : Fragment() {
                 val windowSize = rememberWindowSize()
                 HandoutsScreen(
                     windowSize = windowSize,
-                    onBackClick = {
-                        requireActivity().supportFragmentManager.popBackStack()
-                    },
                     onHandoutsClick = {
                         router.navigateToHandoutsWebView(
                             requireActivity().supportFragmentManager,
@@ -91,7 +88,6 @@ class HandoutsFragment : Fragment() {
 @Composable
 private fun HandoutsScreen(
     windowSize: WindowSize,
-    onBackClick: () -> Unit,
     onHandoutsClick: () -> Unit,
     onAnnouncementsClick: () -> Unit,
 ) {
@@ -121,27 +117,6 @@ private fun HandoutsScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             Column(screenWidth) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .zIndex(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    BackBtn {
-                        onBackClick()
-                    }
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 56.dp),
-                        text = stringResource(id = courseR.string.course_handouts),
-                        color = MaterialTheme.appColors.textPrimary,
-                        style = MaterialTheme.appTypography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center
-                    )
-                }
                 Spacer(Modifier.height(6.dp))
                 Surface(
                     color = MaterialTheme.appColors.background
@@ -222,7 +197,7 @@ private fun HandoutsScreenPreview() {
     OpenEdXTheme {
         HandoutsScreen(
             windowSize = WindowSize(WindowType.Compact, WindowType.Compact),
-            onBackClick = {}, onHandoutsClick = {}, onAnnouncementsClick = {})
+            onHandoutsClick = {}, onAnnouncementsClick = {})
     }
 }
 
@@ -233,6 +208,6 @@ private fun HandoutsScreenTabletPreview() {
     OpenEdXTheme {
         HandoutsScreen(
             windowSize = WindowSize(WindowType.Medium, WindowType.Medium),
-            onBackClick = {}, onHandoutsClick = {}, onAnnouncementsClick = {})
+            onHandoutsClick = {}, onAnnouncementsClick = {})
     }
 }

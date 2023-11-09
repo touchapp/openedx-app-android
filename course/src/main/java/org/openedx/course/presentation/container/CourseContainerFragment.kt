@@ -7,17 +7,19 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.tabs.TabLayoutMediator
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
 import org.openedx.core.presentation.global.viewBinding
 import org.openedx.course.R
 import org.openedx.course.databinding.FragmentCourseContainerBinding
 import org.openedx.course.presentation.CourseRouter
 import org.openedx.course.presentation.handouts.HandoutsFragment
 import org.openedx.course.presentation.outline.CourseOutlineFragment
+import org.openedx.course.presentation.ui.CourseToolbar
 import org.openedx.course.presentation.videos.CourseVideosFragment
 import org.openedx.discussion.presentation.topics.DiscussionTopicsFragment
-import org.koin.android.ext.android.inject
-import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.koin.core.parameter.parametersOf
 
 class CourseContainerFragment : Fragment(R.layout.fragment_course_container) {
 
@@ -44,6 +46,15 @@ class CourseContainerFragment : Fragment(R.layout.fragment_course_container) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        binding.toolbar.setContent {
+            CourseToolbar(
+                title = courseTitle,
+                onBackClick = {
+                    requireActivity().supportFragmentManager.popBackStack()
+                }
+            )
+        }
 
         observe()
 
@@ -83,8 +94,18 @@ class CourseContainerFragment : Fragment(R.layout.fragment_course_container) {
             if (coursewareAccess != null) {
                 if (coursewareAccess.hasAccess) {
                     binding.viewPager.isVisible = true
-                    binding.bottomNavView.isVisible = true
+                    binding.tabLayout.isVisible = true
                     initViewPager()
+                    TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+                        tab.text = getString(
+                            when (position) {
+                                0 -> R.string.course_navigation_course
+                                1 -> R.string.course_navigation_video
+                                2 -> R.string.course_navigation_discussion
+                                else -> R.string.course_navigation_handouts
+                            }
+                        )
+                    }.attach()
                 } else {
                     router.navigateToNoAccess(
                         requireActivity().supportFragmentManager,
@@ -118,7 +139,6 @@ class CourseContainerFragment : Fragment(R.layout.fragment_course_container) {
             addFragment(HandoutsFragment.newInstance(viewModel.courseId))
         }
         binding.viewPager.adapter = adapter
-        binding.viewPager.isUserInputEnabled = false
     }
 
     fun updateCourseStructure(withSwipeRefresh: Boolean) {

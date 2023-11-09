@@ -735,6 +735,36 @@ fun CourseUnitBlocksList(
     }
 }
 
+@Composable
+fun CourseToolbar(
+    title: String,
+    onBackClick: () -> Unit
+) {
+    OpenEdXTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .displayCutoutForLandscape()
+                .zIndex(1f)
+                .statusBarsPadding(),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            BackBtn { onBackClick() }
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 56.dp),
+                text = title,
+                color = MaterialTheme.appColors.textPrimary,
+                style = MaterialTheme.appTypography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable

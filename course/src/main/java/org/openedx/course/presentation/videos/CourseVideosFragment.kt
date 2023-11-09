@@ -85,7 +85,6 @@ class CourseVideosFragment : Fragment() {
                     windowSize = windowSize,
                     uiState = uiState,
                     uiMessage = uiMessage,
-                    courseTitle = viewModel.courseTitle,
                     hasInternetConnection = viewModel.hasInternetConnection,
                     isUpdating = isUpdating,
                     onSwipeRefresh = {
@@ -107,9 +106,6 @@ class CourseVideosFragment : Fragment() {
                             courseName = block.displayName,
                             mode = CourseViewMode.VIDEOS
                         )
-                    },
-                    onBackClick = {
-                        requireActivity().supportFragmentManager.popBackStack()
                     },
                     onDownloadClick = {
                         if (viewModel.isBlockDownloading(it.id)) {
@@ -157,11 +153,9 @@ private fun CourseVideosScreen(
     isUpdating: Boolean,
     hasInternetConnection: Boolean,
     onSwipeRefresh: () -> Unit,
-    courseTitle: String,
     onItemClick: (Block) -> Unit,
     onSectionClick: (Block) -> Unit,
     onReloadClick: () -> Unit,
-    onBackClick: () -> Unit,
     onDownloadClick: (Block) -> Unit
 ) {
     val scaffoldState = rememberScaffoldState()
@@ -212,32 +206,10 @@ private fun CourseVideosScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it)
-                .statusBarsInset()
                 .displayCutoutForLandscape(),
             contentAlignment = Alignment.TopCenter
         ) {
             Column(screenWidth) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .zIndex(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    BackBtn {
-                        onBackClick()
-                    }
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 56.dp),
-                        text = courseTitle,
-                        color = MaterialTheme.appColors.textPrimary,
-                        style = MaterialTheme.appTypography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center
-                    )
-                }
                 Spacer(Modifier.height(6.dp))
                 Surface(
                     color = MaterialTheme.appColors.background,
@@ -392,10 +364,8 @@ private fun CourseVideosScreenPreview() {
                 emptyMap(),
                 mapOf()
             ),
-            courseTitle = "Course",
             onItemClick = { },
             onSectionClick = {},
-            onBackClick = {},
             hasInternetConnection = true,
             isUpdating = false,
             onSwipeRefresh = {},
@@ -416,10 +386,8 @@ private fun CourseVideosScreenEmptyPreview() {
             uiState = CourseVideosUIState.Empty(
                 "This course does not include any videos."
             ),
-            courseTitle = "Course",
             onItemClick = { },
             onSectionClick = {},
-            onBackClick = {},
             onSwipeRefresh = {},
             onReloadClick = {},
             hasInternetConnection = true,
@@ -442,10 +410,8 @@ private fun CourseVideosScreenTabletPreview() {
                 emptyMap(),
                 mapOf()
             ),
-            courseTitle = "Course",
             onItemClick = { },
             onSectionClick = {},
-            onBackClick = {},
             onSwipeRefresh = {},
             onReloadClick = {},
             isUpdating = false,
