@@ -1,9 +1,6 @@
 package org.openedx.course.presentation.ui
 
 import android.content.res.Configuration
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,7 +8,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -466,61 +462,6 @@ fun NavigationUnitsButtons(
 }
 
 @Composable
-fun VerticalPageIndicator(
-    numberOfPages: Int,
-    selectedPage: Int = 0,
-    selectedColor: Color = Color.White,
-    defaultColor: Color = Color.Gray,
-    defaultRadius: Dp = 8.dp,
-    selectedLength: Dp = 25.dp,
-    space: Dp = 4.dp,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-    ) {
-        repeat(numberOfPages) {
-            Indicator(
-                isSelected = it == selectedPage,
-                selectedColor = selectedColor,
-                defaultColor = defaultColor,
-                defaultRadius = defaultRadius,
-                selectedSize = selectedLength,
-                modifier = Modifier.padding(vertical = space)
-            )
-        }
-    }
-}
-
-@Composable
-fun Indicator(
-    isSelected: Boolean,
-    selectedColor: Color,
-    defaultColor: Color,
-    defaultRadius: Dp,
-    selectedSize: Dp,
-    modifier: Modifier = Modifier
-) {
-    val size by animateDpAsState(
-        targetValue = if (isSelected) selectedSize else defaultRadius,
-        animationSpec = tween(300)
-    )
-    val color by animateColorAsState(
-        targetValue = if (isSelected) selectedColor else defaultColor,
-        animationSpec = tween(300)
-    )
-
-    Box(
-        modifier = modifier
-            .clip(CircleShape)
-            .background(color)
-            .size(size)
-    )
-}
-
-@Composable
 fun ConnectionErrorView(
     modifier: Modifier,
     onReloadClick: () -> Unit
@@ -636,6 +577,8 @@ fun VideoSubtitles(
 @Composable
 fun CourseUnitToolbar(
     title: String,
+    numberOfPages: Int,
+    selectedPage: Int = 0,
     sectionName: String,
     blockListShowed: Boolean?,
     onBlockClick: () -> Unit,
@@ -665,11 +608,24 @@ fun CourseUnitToolbar(
                 )
             }
 
+            UnitHorizontalPageIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp),
+                numberOfPages = numberOfPages,
+                selectedPage = selectedPage,
+                selectedColor = Color(0xFFF0CC00),
+                defaultColor = Color(0xFFD7D3D1)
+            )
+
             val textStyle = MaterialTheme.appTypography.titleMedium
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = 8.dp
+                    )
                     .noRippleClickable { onBlockClick() },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -741,6 +697,29 @@ fun UnitSectionsList(
                 }
                 Divider()
             }
+        }
+    }
+}
+
+@Composable
+fun UnitHorizontalPageIndicator(
+    modifier: Modifier = Modifier,
+    numberOfPages: Int,
+    selectedPage: Int = 0,
+    selectedColor: Color = Color.White,
+    defaultColor: Color = Color.Gray
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(1.dp),
+        modifier = modifier
+    ) {
+        repeat(numberOfPages) { index ->
+            Box(
+                modifier = Modifier
+                    .background(if (index <= selectedPage) selectedColor else defaultColor)
+                    .fillMaxHeight()
+                    .weight(1f)
+            )
         }
     }
 }

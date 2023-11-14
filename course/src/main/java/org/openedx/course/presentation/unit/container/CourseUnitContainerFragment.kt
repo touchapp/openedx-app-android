@@ -1,12 +1,9 @@
 package org.openedx.course.presentation.unit.container
 
-import android.content.res.Configuration
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -14,7 +11,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -30,13 +26,15 @@ import org.openedx.core.presentation.global.InsetHolder
 import org.openedx.core.presentation.global.viewBinding
 import org.openedx.core.ui.rememberWindowSize
 import org.openedx.core.ui.theme.OpenEdXTheme
-import org.openedx.core.ui.theme.appColors
 import org.openedx.course.R
 import org.openedx.course.databinding.FragmentCourseUnitContainerBinding
 import org.openedx.course.presentation.ChapterEndFragmentDialog
 import org.openedx.course.presentation.CourseRouter
 import org.openedx.course.presentation.DialogListener
-import org.openedx.course.presentation.ui.*
+import org.openedx.course.presentation.ui.CourseUnitToolbar
+import org.openedx.course.presentation.ui.NavigationUnitsButtons
+import org.openedx.course.presentation.ui.UnitSectionsList
+import org.openedx.course.presentation.ui.VideoTitle
 
 class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_container) {
 
@@ -69,12 +67,6 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         val containerParams = binding.viewPager.layoutParams as ConstraintLayout.LayoutParams
         containerParams.bottomMargin = insetHolder.bottomInset
         binding.viewPager.layoutParams = containerParams
-        val configuration = requireActivity().resources.configuration
-        if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            val countParams = binding.cvCount.layoutParams as ConstraintLayout.LayoutParams
-            countParams.rightMargin = insetHolder.cutoutInset
-            binding.cvCount.layoutParams = countParams
-        }
 
         initViewPager()
         if (savedInstanceState == null) {
@@ -102,32 +94,19 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
             NavigationBar()
         }
 
-        binding.cvCount.setContent {
-            OpenEdXTheme {
-                val index by viewModel.indexInContainer.observeAsState(1)
-                val units by viewModel.verticalBlockCounts.observeAsState(1)
-
-                VerticalPageIndicator(
-                    numberOfPages = units,
-                    selectedColor = MaterialTheme.appColors.primary,
-                    defaultColor = MaterialTheme.appColors.bottomSheetToggle,
-                    selectedPage = index,
-                    defaultRadius = 3.dp,
-                    selectedLength = 5.dp,
-                    modifier = Modifier
-                        .width(24.dp)
-                )
-            }
-        }
-
         binding.btnBack.setContent {
             val currentSection = viewModel.getSectionsBlocks().first { it.id == blockId }
             val title = viewModel.getModuleBlock(currentSection.id).displayName
             val sectionName = currentSection.displayName
             val blockShowed by viewModel.selectBlockDialogShowed.observeAsState()
 
+            val index by viewModel.indexInContainer.observeAsState(1)
+            val units by viewModel.verticalBlockCounts.observeAsState(1)
+
             CourseUnitToolbar(
                 title = title,
+                numberOfPages = units,
+                selectedPage = index,
                 sectionName = sectionName,
                 blockListShowed = blockShowed,
                 onBlockClick = { handleSectionClick() },
