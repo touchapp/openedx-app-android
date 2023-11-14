@@ -661,7 +661,10 @@ fun UnitSectionsList(
         itemsIndexed(sectionsBlocks) { index, block ->
             Column(
                 modifier = Modifier
-                    .background(Color(if (index == selectedSection) 0xFFF2F0EF else 0xFFFFFF))
+                    .background(
+                        if (index == selectedSection) MaterialTheme.appColors.surface else
+                            MaterialTheme.appColors.background
+                    )
                     .clickable { onSectionClick(block) }
             ) {
                 Row(

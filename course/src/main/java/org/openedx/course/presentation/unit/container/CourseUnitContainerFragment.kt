@@ -120,11 +120,13 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
 
         binding.sectionsBlocksList?.setContent {
             val index = viewModel.getSectionsBlocks().indexOfFirst { it.id == blockId }
-            UnitSectionsList(
-                sectionsBlocks = viewModel.getSectionsBlocks(),
-                selectedSection = index
-            ) { block ->
-                proceedToNextSection(block)
+            OpenEdXTheme {
+                UnitSectionsList(
+                    sectionsBlocks = viewModel.getSectionsBlocks(),
+                    selectedSection = index
+                ) { block ->
+                    proceedToNextSection(block)
+                }
             }
         }
     }
