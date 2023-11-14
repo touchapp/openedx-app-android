@@ -23,6 +23,7 @@ import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import org.openedx.core.BlockType
+import org.openedx.core.domain.model.Block
 import org.openedx.core.extension.serializable
 import org.openedx.core.presentation.course.CourseViewMode
 import org.openedx.core.presentation.global.InsetHolder
@@ -120,43 +121,31 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         }
 
         binding.btnBack.setContent {
-            val block by viewModel.currentBlock.observeAsState()
+            val currentSection = viewModel.getSectionsBlocks().first { it.id == blockId }
+            val title = viewModel.getModuleBlock(currentSection.id).displayName
+            val sectionName = currentSection.displayName
             val blockShowed by viewModel.selectBlockDialogShowed.observeAsState()
 
             CourseUnitToolbar(
-                title = requireArguments().getString(ARG_COURSE_NAME, ""),
-                block = block,
+                title = title,
+                sectionName = sectionName,
                 blockListShowed = blockShowed,
-                onBlockClick = { handleBlockClick() },
+                onBlockClick = { handleSectionClick() },
                 onBackClick = {
                     requireActivity().supportFragmentManager.popBackStack()
                 }
             )
         }
 
-        binding.unitBlocksBg?.setOnClickListener { handleBlockClick() }
+        binding.sectionsBlocksBg?.setOnClickListener { handleSectionClick() }
 
-        binding.unitBlocksList?.setContent {
-            val index by viewModel.indexInContainer.observeAsState(0)
-            CourseUnitBlocksList(
-                unitBlocks = viewModel.getUnitBlocks(),
-                selectedPage = index
-            ) { nextIndex ->
-                if (nextIndex > viewModel.currentIndex) {
-                    handleNextClick(nextIndex) { _, _, _ ->
-
-                    }
-                } else if (nextIndex < viewModel.currentIndex) {
-                    handlePrevClick(nextIndex) { _, _, _ ->
-
-                    }
-                }
-
-                handleBlockClick()
-
-                binding.cvNavigationBar.setContent {
-                    NavigationBar()
-                }
+        binding.sectionsBlocksList?.setContent {
+            val index = viewModel.getSectionsBlocks().indexOfFirst { it.id == blockId }
+            UnitSectionsList(
+                sectionsBlocks = viewModel.getSectionsBlocks(),
+                selectedSection = index
+            ) { block ->
+                proceedToNextSection(block)
             }
         }
     }
@@ -248,18 +237,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                                 it.blockId,
                                 it.displayName
                             )
-                            if (it.type.isContainer()) {
-                                router.replaceCourseContainer(
-                                    requireActivity().supportFragmentManager,
-                                    it.id,
-                                    viewModel.courseId,
-                                    requireArguments().getString(
-                                        ARG_COURSE_NAME,
-                                        ""
-                                    ),
-                                    requireArguments().serializable(ARG_MODE)!!
-                                )
-                            }
+                            proceedToNextSection(it)
                         }
                     }
 
@@ -275,16 +253,28 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         }
     }
 
-    private fun handleBlockClick() {
-        if (binding.unitBlocksCardView?.visibility == View.VISIBLE) {
-            binding.unitBlocksCardView?.visibility = View.GONE
-            binding.unitBlocksBg?.visibility = View.GONE
+    private fun handleSectionClick() {
+        if (binding.sectionsBlocksCardView?.visibility == View.VISIBLE) {
+            binding.sectionsBlocksCardView?.visibility = View.GONE
+            binding.sectionsBlocksBg?.visibility = View.GONE
             viewModel.hideSelectBlockDialog()
 
         } else {
-            binding.unitBlocksCardView?.visibility = View.VISIBLE
-            binding.unitBlocksBg?.visibility = View.VISIBLE
+            binding.sectionsBlocksCardView?.visibility = View.VISIBLE
+            binding.sectionsBlocksBg?.visibility = View.VISIBLE
             viewModel.showSelectBlockDialog()
+        }
+    }
+
+    private fun proceedToNextSection(nextBlock: Block) {
+        if (nextBlock.type.isContainer()) {
+            router.replaceCourseContainer(
+                requireActivity().supportFragmentManager,
+                nextBlock.id,
+                viewModel.courseId,
+                requireArguments().getString(ARG_COURSE_NAME, ""),
+                requireArguments().serializable(ARG_MODE)!!
+            )
         }
     }
 

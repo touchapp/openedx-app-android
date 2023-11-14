@@ -65,6 +65,7 @@ class CourseUnitContainerViewModel(
 
     private val descendants = mutableListOf<String>()
     private val descendantsBlocks = mutableListOf<Block>()
+    private val sectionsBlocks = mutableListOf<Block>()
 
     fun loadBlocks(mode: CourseViewMode) {
         try {
@@ -97,6 +98,7 @@ class CourseUnitContainerViewModel(
                 if (block.descendants.isNotEmpty()) {
                     descendants.clearAndAddAll(block.descendants)
                     descendantsBlocks.clearAndAddAll(blocks.filter { block.descendants.contains(it.id) })
+                    sectionsBlocks.clearAndAddAll(getSectionsBlocks(blocks, getSectionId(blockId)))
 
                 } else {
                     setNextVerticalIndex()
@@ -110,6 +112,29 @@ class CourseUnitContainerViewModel(
                 return
             }
         }
+    }
+
+    private fun getSectionId(blockId: String): String {
+        return blocks.firstOrNull { it.descendants.contains(blockId) }?.id ?: ""
+    }
+
+    private fun getSectionsBlocks(blocks: List<Block>, id: String): List<Block> {
+        val resultList = mutableListOf<Block>()
+        if (blocks.isEmpty()) return emptyList()
+        val selectedBlock = blocks.first {
+            it.id == id
+        }
+        for (descendant in selectedBlock.descendants) {
+            val blockDescendant = blocks.find {
+                it.id == descendant
+            }
+            if (blockDescendant != null) {
+                if (blockDescendant.type == BlockType.VERTICAL) {
+                    resultList.add(blockDescendant)
+                }
+            } else continue
+        }
+        return resultList
     }
 
     private fun setNextVerticalIndex() {
@@ -172,6 +197,12 @@ class CourseUnitContainerViewModel(
     }
 
     fun getUnitBlocks(): List<Block> = blocks.filter { descendants.contains(it.id) }
+
+    fun getSectionsBlocks(): List<Block> = sectionsBlocks
+
+    fun getModuleBlock(sectionBlockId: String): Block {
+        return blocks.first { it.descendants.contains(sectionBlockId) }
+    }
 
     fun nextBlockClickedEvent(blockId: String, blockName: String) {
         analytics.nextBlockClickedEvent(courseId, courseName, blockId, blockName)

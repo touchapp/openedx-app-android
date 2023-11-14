@@ -636,7 +636,7 @@ fun VideoSubtitles(
 @Composable
 fun CourseUnitToolbar(
     title: String,
-    block: Block? = null,
+    sectionName: String,
     blockListShowed: Boolean?,
     onBlockClick: () -> Unit,
     onBackClick: () -> Unit
@@ -677,7 +677,7 @@ fun CourseUnitToolbar(
                 Text(
                     modifier = Modifier
                         .weight(1f),
-                    text = block?.displayName ?: "",
+                    text = sectionName,
                     color = MaterialTheme.appColors.textPrimary,
                     style = textStyle,
                     maxLines = 1,
@@ -696,37 +696,47 @@ fun CourseUnitToolbar(
 }
 
 @Composable
-fun CourseUnitBlocksList(
-    unitBlocks: List<Block>,
-    selectedPage: Int = 0,
-    onBlockClick: (index: Int) -> Unit
+fun UnitSectionsList(
+    sectionsBlocks: List<Block>,
+    selectedSection: Int = 0,
+    onSectionClick: (block: Block) -> Unit
 ) {
     LazyColumn(Modifier.fillMaxWidth()) {
-        itemsIndexed(unitBlocks) { index, block ->
+        itemsIndexed(sectionsBlocks) { index, block ->
             Column(
                 modifier = Modifier
-                    .background(Color(if (index == selectedPage) 0xFFF2F0EF else 0xFFFFFF))
-                    .clickable { onBlockClick(index) }
+                    .background(Color(if (index == selectedSection) 0xFFF2F0EF else 0xFFFFFF))
+                    .clickable { onSectionClick(block) }
             ) {
                 Row(
                     modifier = Modifier.padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         modifier = Modifier
-                            .alpha(if (index <= selectedPage) 1f else 0f),
+                            .size(16.dp)
+                            .alpha(if (block.completion == 1.0) 1f else 0f),
                         painter = painterResource(id = R.drawable.ic_course_check),
                         contentDescription = "done",
                         tint = Color(0xFF0D7D4D)
                     )
                     Text(
+                        modifier = Modifier
+                            .padding(start = 8.dp, end = 8.dp)
+                            .weight(1f),
                         text = block.displayName,
                         color = MaterialTheme.appColors.textPrimary,
-                        style = MaterialTheme.appTypography.bodySmall,
-                        maxLines = 1,
+                        style = MaterialTheme.appTypography.labelMedium,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Start
+                        textAlign = TextAlign.Start,
+                    )
+                    Icon(
+                        modifier = Modifier
+                            .size(18.dp),
+                        painter = painterResource(id = getUnitBlockIcon(block)),
+                        contentDescription = null,
+                        tint = Color(0xFF707070)
                     )
                 }
                 Divider()

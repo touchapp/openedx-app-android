@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
     android:background="@color/background">
 
     <androidx.compose.ui.platform.ComposeView
@@ -52,20 +53,20 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <View
-        android:id="@+id/unitBlocksBg"
+        android:id="@+id/sectionsBlocksBg"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone" />
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/unitBlocksCardView"
+        android:id="@+id/sectionsBlocksCardView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="84dp"
         android:visibility="gone"
-        app:cardCornerRadius="4dp"
+        app:cardCornerRadius="8dp"
         app:cardElevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -73,7 +74,7 @@
         app:layout_constraintVertical_bias="0.0">
 
         <androidx.compose.ui.platform.ComposeView
-            android:id="@+id/unitBlocksList"
+            android:id="@+id/sectionsBlocksList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </com.google.android.material.card.MaterialCardView>
