@@ -95,9 +95,10 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         }
 
         binding.btnBack.setContent {
-            val currentSection = viewModel.getSectionsBlocks().first { it.id == blockId }
-            val title = viewModel.getModuleBlock(currentSection.id).displayName
-            val sectionName = currentSection.displayName
+            val currentSection = viewModel.getSectionsBlocks().firstOrNull { it.id == blockId }
+            val title =
+                if (currentSection == null) "" else viewModel.getModuleBlock(currentSection.id).displayName
+            val sectionName = currentSection?.displayName ?: ""
             val blockShowed by viewModel.selectBlockDialogShowed.observeAsState()
 
             val index by viewModel.indexInContainer.observeAsState(1)

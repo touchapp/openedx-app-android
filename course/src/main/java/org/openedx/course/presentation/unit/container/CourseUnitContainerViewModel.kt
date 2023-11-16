@@ -35,12 +35,12 @@ class CourseUnitContainerViewModel(
 
     val isFirstIndexInContainer: Boolean
         get() {
-            return descendants.first() == descendants[currentIndex]
+            return descendants.firstOrNull() == descendants.getOrNull(currentIndex)
         }
 
     val isLastIndexInContainer: Boolean
         get() {
-            return descendants.last() == descendants[currentIndex]
+            return descendants.lastOrNull() == descendants.getOrNull(currentIndex)
         }
 
     private val _verticalBlockCounts = MutableLiveData<Int>()
