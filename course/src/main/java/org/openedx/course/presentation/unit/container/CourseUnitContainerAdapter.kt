@@ -35,7 +35,7 @@ class CourseUnitContainerAdapter(
             }
 
             BlockType.VIDEO -> {
-                val encodedVideos = block.studentViewData!!.encodedVideos!!
+                val encodedVideos = block.studentViewData!!.encodedVideos ?: return Fragment()
                 val transcripts = block.studentViewData!!.transcripts
                 with(encodedVideos) {
                     var isDownloaded = false
