@@ -4,12 +4,9 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
@@ -95,7 +92,8 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         }
 
         binding.btnBack.setContent {
-            val currentSection = viewModel.getSectionsBlocks().firstOrNull { it.id == blockId }
+            val sectionsBlocks by viewModel.sectionsBlocks.collectAsState()
+            val currentSection = sectionsBlocks?.firstOrNull { it.id == blockId }
             val title =
                 if (currentSection == null) "" else viewModel.getModuleBlock(currentSection.id).displayName
             val sectionName = currentSection?.displayName ?: ""
@@ -109,6 +107,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                 numberOfPages = units,
                 selectedPage = index,
                 sectionName = sectionName,
+                sectionsCount = sectionsBlocks?.size ?: 0,
                 blockListShowed = blockShowed,
                 onBlockClick = { handleSectionClick() },
                 onBackClick = {
@@ -120,13 +119,19 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
         binding.sectionsBlocksBg?.setOnClickListener { handleSectionClick() }
 
         binding.sectionsBlocksList?.setContent {
-            val index = viewModel.getSectionsBlocks().indexOfFirst { it.id == blockId }
+            val sectionsBlocks by viewModel.sectionsBlocks.collectAsState()
+            val selectedIndex = sectionsBlocks?.indexOfFirst { it.id == blockId } ?: 0
             OpenEdXTheme {
                 UnitSectionsList(
-                    sectionsBlocks = viewModel.getSectionsBlocks(),
-                    selectedSection = index
-                ) { block ->
-                    proceedToNextSection(block)
+                    sectionsBlocks = sectionsBlocks ?: listOf(),
+                    selectedSection = selectedIndex
+                ) { index, block ->
+                    if (index != selectedIndex) {
+                        proceedToNextSection(block)
+
+                    } else {
+                        handleSectionClick()
+                    }
                 }
             }
         }

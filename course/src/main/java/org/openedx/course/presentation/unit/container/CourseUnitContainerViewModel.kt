@@ -4,6 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -17,6 +19,7 @@ import org.openedx.core.module.db.DownloadedState
 import org.openedx.core.presentation.course.CourseViewMode
 import org.openedx.core.system.notifier.CourseNotifier
 import org.openedx.core.system.notifier.CourseSectionChanged
+import org.openedx.core.system.notifier.CourseStructureUpdated
 import org.openedx.course.domain.interactor.CourseInteractor
 import org.openedx.course.presentation.CourseAnalytics
 
@@ -59,15 +62,20 @@ class CourseUnitContainerViewModel(
     val selectBlockDialogShowed: LiveData<Boolean>
         get() = _selectBlockDialogShowed
 
+    private val _sectionsBlocks = MutableStateFlow<List<Block>?>(listOf())
+    val sectionsBlocks = _sectionsBlocks.asStateFlow()
+
     var nextButtonText = ""
     var hasNextBlock = false
+
+    private var currentMode: CourseViewMode? = null
     private var courseName = ""
 
     private val descendants = mutableListOf<String>()
     private val descendantsBlocks = mutableListOf<Block>()
-    private val sectionsBlocks = mutableListOf<Block>()
 
     fun loadBlocks(mode: CourseViewMode) {
+        currentMode = mode
         try {
             val courseStructure = when (mode) {
                 CourseViewMode.FULL -> interactor.getCourseStructureFromCache()
@@ -83,6 +91,16 @@ class CourseUnitContainerViewModel(
 
     init {
         _indexInContainer.value = 0
+
+        viewModelScope.launch {
+            notifier.notifier.collect { event ->
+                if (event is CourseStructureUpdated) {
+                    currentMode?.let { loadBlocks(it) }
+                    val blockId = blocks[currentVerticalIndex].id
+                    _sectionsBlocks.value = getSectionsBlocks(blocks, getSectionId(blockId))
+                }
+            }
+        }
     }
 
     fun setupCurrentIndex(blockId: String) {
@@ -98,7 +116,7 @@ class CourseUnitContainerViewModel(
                 if (block.descendants.isNotEmpty()) {
                     descendants.clearAndAddAll(block.descendants)
                     descendantsBlocks.clearAndAddAll(blocks.filter { block.descendants.contains(it.id) })
-                    sectionsBlocks.clearAndAddAll(getSectionsBlocks(blocks, getSectionId(blockId)))
+                    _sectionsBlocks.value = getSectionsBlocks(blocks, getSectionId(blockId))
 
                 } else {
                     setNextVerticalIndex()
@@ -197,8 +215,6 @@ class CourseUnitContainerViewModel(
     }
 
     fun getUnitBlocks(): List<Block> = blocks.filter { descendants.contains(it.id) }
-
-    fun getSectionsBlocks(): List<Block> = sectionsBlocks
 
     fun getModuleBlock(sectionBlockId: String): Block {
         return blocks.first { it.descendants.contains(sectionBlockId) }

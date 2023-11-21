@@ -7,6 +7,7 @@ import org.openedx.course.data.repository.CourseRepository
 import org.openedx.core.system.notifier.CourseNotifier
 import org.openedx.core.system.notifier.CourseVideoPositionChanged
 import kotlinx.coroutines.launch
+import org.openedx.core.system.notifier.CourseCompletionSet
 
 class VideoViewModel(
     private val courseId: String,
@@ -38,6 +39,7 @@ class VideoViewModel(
                         courseId,
                         listOf(blockId)
                     )
+                    notifier.send(CourseCompletionSet())
                 } catch (e: Exception) {
                     isBlockAlreadyCompleted = false
                 }

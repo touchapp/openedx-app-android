@@ -580,6 +580,7 @@ fun CourseUnitToolbar(
     numberOfPages: Int,
     selectedPage: Int = 0,
     sectionName: String,
+    sectionsCount: Int,
     blockListShowed: Boolean?,
     onBlockClick: () -> Unit,
     onBackClick: () -> Unit
@@ -608,25 +609,32 @@ fun CourseUnitToolbar(
                 )
             }
 
-            UnitHorizontalPageIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp),
-                numberOfPages = numberOfPages,
-                selectedPage = selectedPage,
-                selectedColor = Color(0xFFF0CC00),
-                defaultColor = Color(0xFFD7D3D1)
-            )
+            if (numberOfPages > 1) {
+                UnitHorizontalPageIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp),
+                    numberOfPages = numberOfPages,
+                    selectedPage = selectedPage,
+                    selectedColor = Color(0xFFF0CC00),
+                    defaultColor = Color(0xFFD7D3D1)
+                )
+            }
 
             val textStyle = MaterialTheme.appTypography.titleMedium
+            val hasSections = sectionsCount > 0
+            var rowModifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = 16.dp,
+                    vertical = 8.dp
+                )
+            if (hasSections) {
+                rowModifier = rowModifier.noRippleClickable { onBlockClick() }
+            }
+
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = 16.dp,
-                        vertical = 8.dp
-                    )
-                    .noRippleClickable { onBlockClick() },
+                modifier = rowModifier,
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -640,12 +648,15 @@ fun CourseUnitToolbar(
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Start
                 )
-                Icon(
-                    modifier = Modifier.rotate(if (blockListShowed == true) 180f else 0f),
-                    painter = painterResource(id = R.drawable.ic_course_arrow_down),
-                    contentDescription = null,
-                    tint = MaterialTheme.appColors.textPrimary
-                )
+
+                if (hasSections) {
+                    Icon(
+                        modifier = Modifier.rotate(if (blockListShowed == true) 180f else 0f),
+                        painter = painterResource(id = R.drawable.ic_course_arrow_down),
+                        contentDescription = null,
+                        tint = MaterialTheme.appColors.textPrimary
+                    )
+                }
             }
         }
     }
@@ -655,7 +666,7 @@ fun CourseUnitToolbar(
 fun UnitSectionsList(
     sectionsBlocks: List<Block>,
     selectedSection: Int = 0,
-    onSectionClick: (block: Block) -> Unit
+    onSectionClick: (index: Int, block: Block) -> Unit
 ) {
     LazyColumn(Modifier.fillMaxWidth()) {
         itemsIndexed(sectionsBlocks) { index, block ->
@@ -665,7 +676,7 @@ fun UnitSectionsList(
                         if (index == selectedSection) MaterialTheme.appColors.surface else
                             MaterialTheme.appColors.background
                     )
-                    .clickable { onSectionClick(block) }
+                    .clickable { onSectionClick(index, block) }
             ) {
                 Row(
                     modifier = Modifier.padding(8.dp),

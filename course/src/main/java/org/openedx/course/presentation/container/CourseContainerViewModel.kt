@@ -3,6 +3,7 @@ package org.openedx.course.presentation.container
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import org.openedx.core.BaseViewModel
 import org.openedx.core.R
 import org.openedx.core.SingleEventLiveData
@@ -11,11 +12,11 @@ import org.openedx.core.exception.NoCachedDataException
 import org.openedx.core.extension.isInternetError
 import org.openedx.core.system.ResourceManager
 import org.openedx.core.system.connection.NetworkConnection
+import org.openedx.core.system.notifier.CourseCompletionSet
 import org.openedx.core.system.notifier.CourseNotifier
 import org.openedx.core.system.notifier.CourseStructureUpdated
 import org.openedx.course.domain.interactor.CourseInteractor
 import org.openedx.course.presentation.CourseAnalytics
-import kotlinx.coroutines.launch
 
 class CourseContainerViewModel(
     val courseId: String,
@@ -39,6 +40,16 @@ class CourseContainerViewModel(
         get() = _showProgress
 
     private var courseName = ""
+
+    init {
+        viewModelScope.launch {
+            notifier.notifier.collect { event ->
+                if (event is CourseCompletionSet) {
+                    updateData(false)
+                }
+            }
+        }
+    }
 
     fun preloadCourseStructure() {
         if (_dataReady.value != null) {

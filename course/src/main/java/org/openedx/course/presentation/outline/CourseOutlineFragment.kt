@@ -291,6 +291,7 @@ internal fun CourseOutlineScreen(
 
                                     uiState.courseStructure.blockData.forEach { block ->
                                         val courseSections = uiState.courseSections[block.id]
+                                        val courseSectionsState = uiState.courseSectionsState[block.id]
 
                                         item {
                                             Column(listPadding) {
@@ -312,7 +313,7 @@ internal fun CourseOutlineScreen(
                                                             onItemClick(blockSelected)
                                                         },
                                                         onDownloadClick = onDownloadClick,
-                                                        arrowDegrees = if (courseSections?.expanded == true) -90f else 90f
+                                                        arrowDegrees = if (courseSectionsState == true) -90f else 90f
                                                     )
                                                     Divider()
                                                 }
@@ -320,11 +321,11 @@ internal fun CourseOutlineScreen(
                                         }
 
 
-                                        courseSections?.blocks?.forEach { sectionBlock ->
+                                        courseSections?.forEach { sectionBlock ->
                                             item {
                                                 Column(listPadding) {
                                                     AnimatedVisibility(
-                                                        visible = courseSections.expanded
+                                                        visible = courseSectionsState == true
                                                     ) {
                                                         Column {
                                                             CourseSubsectionItem(
@@ -496,6 +497,7 @@ private fun CourseOutlineScreenPreview() {
                 mockCourseStructure,
                 mapOf(),
                 mockChapterBlock,
+                mapOf(),
                 mapOf()
             ),
             uiMessage = null,
@@ -522,6 +524,7 @@ private fun CourseOutlineScreenTabletPreview() {
                 mockCourseStructure,
                 mapOf(),
                 mockChapterBlock,
+                mapOf(),
                 mapOf()
             ),
             uiMessage = null,
