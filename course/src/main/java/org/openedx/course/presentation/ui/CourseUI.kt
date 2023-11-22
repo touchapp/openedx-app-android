@@ -126,6 +126,7 @@ fun CourseImageHeader(
 fun CourseSectionCard(
     block: Block,
     downloadedState: DownloadedState?,
+    downloadsCount: Int,
     onItemClick: (Block) -> Unit,
     onDownloadClick: (Block) -> Unit,
     arrowDegrees: Float = 0f
@@ -165,7 +166,7 @@ fun CourseSectionCard(
             Spacer(modifier = Modifier.width(16.dp))
             Row(
                 modifier = Modifier.fillMaxHeight(),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(if (downloadsCount > 0) 8.dp else 24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (downloadedState == DownloadedState.DOWNLOADED || downloadedState == DownloadedState.NOT_DOWNLOADED) {
@@ -202,6 +203,13 @@ fun CourseSectionCard(
                             )
                         }
                     }
+                }
+                if (downloadsCount > 0) {
+                    Text(
+                        text = downloadsCount.toString(),
+                        style = MaterialTheme.appTypography.titleSmall,
+                        color = MaterialTheme.appColors.textPrimary
+                    )
                 }
                 CardArrow(
                     degrees = arrowDegrees
@@ -844,6 +852,7 @@ private fun CourseChapterItemPreview() {
             CourseSectionCard(
                 mockChapterBlock,
                 DownloadedState.DOWNLOADED,
+                downloadsCount = 0,
                 onItemClick = {},
                 onDownloadClick = {}
             )

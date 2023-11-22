@@ -21,13 +21,11 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import org.koin.android.ext.android.inject
@@ -48,7 +46,6 @@ import org.openedx.core.ui.theme.appTypography
 import org.openedx.course.presentation.CourseRouter
 import org.openedx.course.presentation.container.CourseContainerFragment
 import org.openedx.course.presentation.outline.CourseOutlineFragment.Companion.getUnitBlockIcon
-import org.openedx.course.presentation.ui.CourseImageHeader
 import org.openedx.course.presentation.ui.CourseSectionCard
 import org.openedx.course.presentation.ui.CourseSubsectionItem
 import java.io.File
@@ -240,7 +237,6 @@ internal fun CourseOutlineScreen(
             Column(
                 screenWidth
             ) {
-                Spacer(Modifier.height(6.dp))
                 Surface(
                     color = MaterialTheme.appColors.background
                 ) {
@@ -260,16 +256,6 @@ internal fun CourseOutlineScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     contentPadding = listBottomPadding
                                 ) {
-                                    item {
-                                        CourseImageHeader(
-                                            modifier = Modifier
-                                                .aspectRatio(1.86f)
-                                                .padding(6.dp),
-                                            courseImage = uiState.courseStructure.media?.image?.large
-                                                ?: "",
-                                            courseCertificate = uiState.courseStructure.certificate
-                                        )
-                                    }
                                     if (uiState.resumeBlock != null) {
                                         item {
                                             Spacer(Modifier.height(28.dp))
@@ -291,7 +277,8 @@ internal fun CourseOutlineScreen(
 
                                     uiState.courseStructure.blockData.forEach { block ->
                                         val courseSections = uiState.courseSections[block.id]
-                                        val courseSectionsState = uiState.courseSectionsState[block.id]
+                                        val courseSectionsState =
+                                            uiState.courseSectionsState[block.id]
 
                                         item {
                                             Column(listPadding) {
@@ -306,9 +293,15 @@ internal fun CourseOutlineScreen(
                                                         color = MaterialTheme.appColors.textPrimaryVariant
                                                     )
                                                 } else {
+                                                    val downloadsCount =
+                                                        courseSections?.count { sectionBlock ->
+                                                            uiState.downloadedState[sectionBlock.id] != null
+                                                        } ?: 0
+
                                                     CourseSectionCard(
                                                         block = block,
                                                         downloadedState = uiState.downloadedState[block.id],
+                                                        downloadsCount = downloadsCount,
                                                         onItemClick = { blockSelected ->
                                                             onItemClick(blockSelected)
                                                         },
@@ -330,7 +323,7 @@ internal fun CourseOutlineScreen(
                                                         Column {
                                                             CourseSubsectionItem(
                                                                 block = sectionBlock,
-                                                                downloadedState = uiState.downloadedState[block.id],
+                                                                downloadedState = uiState.downloadedState[sectionBlock.id],
                                                                 onClick = { sectionBlock ->
                                                                     onSectionClick(sectionBlock)
                                                                 },

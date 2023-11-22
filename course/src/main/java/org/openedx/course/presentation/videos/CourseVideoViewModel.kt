@@ -20,7 +20,6 @@ import org.openedx.core.system.notifier.CourseStructureUpdated
 import org.openedx.course.R
 import org.openedx.course.domain.interactor.CourseInteractor
 import org.openedx.course.presentation.CourseAnalytics
-import org.openedx.course.presentation.outline.CourseSection
 
 class CourseVideoViewModel(
     val courseId: String,
@@ -51,7 +50,8 @@ class CourseVideoViewModel(
     val hasInternetConnection: Boolean
         get() = networkConnection.isOnline()
 
-    private val courseSections = mutableMapOf<String, CourseSection>()
+    private val courseSections = mutableMapOf<String, List<Block>>()
+    private val courseSectionsState = mutableMapOf<String, Boolean>()
 
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
@@ -72,7 +72,8 @@ class CourseVideoViewModel(
                     _uiState.value = CourseVideosUIState.CourseData(
                         courseStructure = state.courseStructure,
                         downloadedState = it.toMap(),
-                        courseSections = courseSections
+                        courseSections = courseSections,
+                        courseSectionsState = courseSectionsState
                     )
                 }
             }
@@ -119,21 +120,23 @@ class CourseVideoViewModel(
                 initDownloadModelsStatus()
                 _uiState.value =
                     CourseVideosUIState.CourseData(
-                        courseStructure, getDownloadModelsStatus(), courseSections
+                        courseStructure, getDownloadModelsStatus(), courseSections,
+                        courseSectionsState
                     )
             }
         }
     }
 
     fun switchCourseSections(blockId: String) {
-        courseSections[blockId]?.expanded = !(courseSections[blockId]?.expanded ?: false)
+        courseSectionsState[blockId] = !(courseSectionsState[blockId] ?: false)
         if (_uiState.value is CourseVideosUIState.CourseData) {
             val state = _uiState.value as CourseVideosUIState.CourseData
             _uiState.value = null
             _uiState.value = CourseVideosUIState.CourseData(
                 courseStructure = state.courseStructure,
                 downloadedState = state.downloadedState,
-                courseSections = courseSections
+                courseSections = courseSections,
+                courseSectionsState = courseSectionsState
             )
         }
     }
@@ -154,8 +157,7 @@ class CourseVideoViewModel(
                 block.descendants.forEach { descendant ->
                     blocks.find { it.id == descendant }?.let {
                         resultBlocks.add(it)
-                        courseSections[it.id] =
-                            getCourseSection(blocks, it.id)
+                        courseSections[it.id] = getCourseSection(blocks, it.id)
                         addDownloadableChildrenForSequentialBlock(it)
                     }
                 }
@@ -164,9 +166,9 @@ class CourseVideoViewModel(
         return resultBlocks.toList()
     }
 
-    private fun getCourseSection(blocks: List<Block>, blockId: String): CourseSection {
+    private fun getCourseSection(blocks: List<Block>, blockId: String): List<Block> {
         val resultList = mutableListOf<Block>()
-        if (blocks.isEmpty()) return CourseSection(emptyList())
+        if (blocks.isEmpty()) return emptyList()
         val selectedBlock = blocks.first {
             it.id == blockId
         }
@@ -181,6 +183,6 @@ class CourseVideoViewModel(
                 }
             } else continue
         }
-        return CourseSection(resultList)
+        return resultList
     }
 }
