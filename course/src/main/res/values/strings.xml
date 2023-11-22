@@ -45,6 +45,6 @@
     <string name="course_open_in_browser">Open in browser</string>
     <string name="course_subtitles">Subtitles</string>
     <string name="course_continue_with">Continue with:</string>
-    <string name="course_continue">Continue</string>
+    <string name="course_continue">Resume</string>
     <string name="course_to_proceed">To proceed with \"%s\" press \"Next section\".</string>
 </resources>

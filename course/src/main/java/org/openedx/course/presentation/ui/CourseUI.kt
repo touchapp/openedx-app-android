@@ -2,6 +2,7 @@ package org.openedx.course.presentation.ui
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,7 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +51,7 @@ import subtitleFile.Caption
 import subtitleFile.TimedTextObject
 import java.util.Date
 import org.openedx.course.R as courseR
+
 
 @Composable
 fun CourseImageHeader(
@@ -595,38 +600,42 @@ fun CourseUnitToolbar(
 ) {
     OpenEdXTheme {
         Column {
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .displayCutoutForLandscape()
                     .zIndex(1f)
                     .statusBarsPadding(),
-                contentAlignment = Alignment.CenterStart
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 BackBtn { onBackClick() }
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 56.dp),
+                        .padding(end = 12.dp)
+                        .weight(1f),
                     text = title,
                     color = MaterialTheme.appColors.textPrimary,
                     style = MaterialTheme.appTypography.titleSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
-            }
-
-            if (numberOfPages > 1) {
-                UnitHorizontalPageIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp),
-                    numberOfPages = numberOfPages,
-                    selectedPage = selectedPage,
-                    selectedColor = Color(0xFFF0CC00),
-                    defaultColor = Color(0xFFD7D3D1)
-                )
+                if (numberOfPages > 1) {
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 12.dp)
+                    ) {
+                        UnitCirclePageIndicator(
+                            modifier = Modifier
+                                .size(24.dp),
+                            numberOfPages = numberOfPages,
+                            selectedPage = selectedPage,
+                            selectedColor = MaterialTheme.appColors.primary,
+                            defaultColor = MaterialTheme.appColors.bottomSheetToggle
+                        )
+                    }
+                }
             }
 
             val textStyle = MaterialTheme.appTypography.titleMedium
@@ -721,6 +730,36 @@ fun UnitSectionsList(
             }
         }
     }
+}
+
+@Composable
+fun UnitCirclePageIndicator(
+    modifier: Modifier = Modifier,
+    numberOfPages: Int,
+    selectedPage: Int = 0,
+    selectedColor: Color = Color.White,
+    defaultColor: Color = Color.Gray
+) {
+    Canvas(modifier = modifier, onDraw = {
+        val stroke = Stroke(
+            width = 4.dp.toPx()
+        )
+        val diameterOffset = stroke.width / 2
+        val arcDimen = size.width - 2 * diameterOffset
+        val oneSegmentAngle = 360f / numberOfPages
+
+        repeat(numberOfPages) { position ->
+            drawArc(
+                color = if (position <= selectedPage) selectedColor else defaultColor,
+                startAngle = 270f + position * oneSegmentAngle,
+                sweepAngle = oneSegmentAngle - 4f,
+                useCenter = false,
+                topLeft = Offset(diameterOffset, diameterOffset),
+                size = Size(arcDimen, arcDimen),
+                style = stroke
+            )
+        }
+    })
 }
 
 @Composable
