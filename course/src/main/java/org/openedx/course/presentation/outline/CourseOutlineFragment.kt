@@ -281,10 +281,10 @@ internal fun CourseOutlineScreen(
                                             uiState.courseSectionsState[block.id]
 
                                         item {
-                                            Column(listPadding) {
+                                            Column {
                                                 if (block.type == BlockType.CHAPTER) {
                                                     Text(
-                                                        modifier = Modifier.padding(
+                                                        modifier = listPadding.padding(
                                                             top = 36.dp,
                                                             bottom = 8.dp
                                                         ),
@@ -299,6 +299,7 @@ internal fun CourseOutlineScreen(
                                                         } ?: 0
 
                                                     CourseSectionCard(
+                                                        modifier = listPadding,
                                                         block = block,
                                                         downloadedState = uiState.downloadedState[block.id],
                                                         downloadsCount = downloadsCount,
@@ -316,12 +317,13 @@ internal fun CourseOutlineScreen(
 
                                         courseSections?.forEach { sectionBlock ->
                                             item {
-                                                Column(listPadding) {
+                                                Column {
                                                     AnimatedVisibility(
                                                         visible = courseSectionsState == true
                                                     ) {
                                                         Column {
                                                             CourseSubsectionItem(
+                                                                modifier = listPadding,
                                                                 block = sectionBlock,
                                                                 downloadedState = uiState.downloadedState[sectionBlock.id],
                                                                 onClick = { sectionBlock ->
@@ -329,13 +331,7 @@ internal fun CourseOutlineScreen(
                                                                 },
                                                                 onDownloadClick = onDownloadClick
                                                             )
-                                                            Box(
-                                                                modifier = Modifier.padding(
-                                                                    start = 20.dp
-                                                                )
-                                                            ) {
-                                                                Divider()
-                                                            }
+                                                            Divider()
                                                         }
                                                     }
                                                 }

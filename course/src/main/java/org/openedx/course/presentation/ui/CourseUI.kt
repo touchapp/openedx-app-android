@@ -129,6 +129,7 @@ fun CourseImageHeader(
 
 @Composable
 fun CourseSectionCard(
+    modifier: Modifier,
     block: Block,
     downloadedState: DownloadedState?,
     downloadsCount: Int,
@@ -138,9 +139,12 @@ fun CourseSectionCard(
 ) {
     val iconModifier = Modifier.size(24.dp)
 
-    Column(Modifier.clickable { onItemClick(block) }) {
+    Column(modifier = Modifier
+        .clickable { onItemClick(block) }
+        .background(if (block.completion == 1.0) Color(0xffF3F9F7) else Color.Transparent)
+    ) {
         Row(
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(60.dp)
                 .padding(
@@ -226,6 +230,7 @@ fun CourseSectionCard(
 
 @Composable
 fun CourseSubsectionItem(
+    modifier: Modifier,
     block: Block,
     downloadedState: DownloadedState?,
     onClick: (Block) -> Unit,
@@ -240,9 +245,12 @@ fun CourseSubsectionItem(
 
     val iconModifier = Modifier.size(24.dp)
 
-    Column(Modifier.clickable { onClick(block) }) {
+    Column(Modifier
+        .clickable { onClick(block) }
+        .background(if (block.completion == 1.0) Color(0xffF3F9F7) else Color.Transparent)
+    ) {
         Row(
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(60.dp)
                 .padding(vertical = 16.dp)
@@ -889,6 +897,7 @@ private fun CourseChapterItemPreview() {
     OpenEdXTheme {
         Surface(color = MaterialTheme.appColors.background) {
             CourseSectionCard(
+                Modifier,
                 mockChapterBlock,
                 DownloadedState.DOWNLOADED,
                 downloadsCount = 0,

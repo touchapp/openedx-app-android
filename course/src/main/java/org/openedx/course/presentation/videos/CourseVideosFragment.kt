@@ -252,10 +252,10 @@ private fun CourseVideosScreen(
                                                 uiState.courseSectionsState[block.id]
 
                                             item {
-                                                Column(listPadding) {
+                                                Column {
                                                     if (block.type == BlockType.CHAPTER) {
                                                         Text(
-                                                            modifier = Modifier.padding(
+                                                            modifier = listPadding.padding(
                                                                 top = 36.dp,
                                                                 bottom = 8.dp
                                                             ),
@@ -270,6 +270,7 @@ private fun CourseVideosScreen(
                                                             } ?: 0
 
                                                         CourseSectionCard(
+                                                            modifier = listPadding,
                                                             block = block,
                                                             downloadedState = uiState.downloadedState[block.id],
                                                             downloadsCount = downloadsCount,
@@ -286,12 +287,13 @@ private fun CourseVideosScreen(
 
                                             courseSections?.forEach { sectionBlock ->
                                                 item {
-                                                    Column(listPadding) {
+                                                    Column {
                                                         AnimatedVisibility(
                                                             visible = courseSectionsState == true
                                                         ) {
                                                             Column {
                                                                 CourseSubsectionItem(
+                                                                    modifier = listPadding,
                                                                     block = sectionBlock,
                                                                     downloadedState = uiState.downloadedState[sectionBlock.id],
                                                                     onClick = { sectionBlock ->
@@ -299,13 +301,7 @@ private fun CourseVideosScreen(
                                                                     },
                                                                     onDownloadClick = onDownloadClick
                                                                 )
-                                                                Box(
-                                                                    modifier = Modifier.padding(
-                                                                        start = 20.dp
-                                                                    )
-                                                                ) {
-                                                                    Divider()
-                                                                }
+                                                                Divider()
                                                             }
                                                         }
                                                     }

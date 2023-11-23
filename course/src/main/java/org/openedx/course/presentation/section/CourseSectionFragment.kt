@@ -223,11 +223,10 @@ private fun CourseSectionScreen(
 
                         is CourseSectionUIState.Blocks -> {
                             Column(Modifier.fillMaxSize()) {
-                                LazyColumn(
-                                    contentPadding = listPadding,
-                                ) {
+                                LazyColumn() {
                                     items(uiState.blocks) { block ->
                                         CourseSubsectionItem(
+                                            modifier = Modifier,
                                             block = block,
                                             downloadedState = uiState.downloadedState[block.id],
                                             onClick = {
