@@ -93,7 +93,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
 
         binding.btnBack.setContent {
             val sectionsBlocks by viewModel.sectionsBlocks.collectAsState()
-            val currentSection = sectionsBlocks?.firstOrNull { it.id == blockId }
+            val currentSection = sectionsBlocks.firstOrNull { it.id == blockId }
             val title =
                 if (currentSection == null) "" else viewModel.getModuleBlock(currentSection.id).displayName
             val sectionName = currentSection?.displayName ?: ""
@@ -107,7 +107,7 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                 numberOfPages = units,
                 selectedPage = index,
                 sectionName = sectionName,
-                sectionsCount = sectionsBlocks?.size ?: 0,
+                sectionsCount = sectionsBlocks.size,
                 blockListShowed = blockShowed,
                 onBlockClick = { handleSectionClick() },
                 onBackClick = {
@@ -120,10 +120,10 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
 
         binding.sectionsBlocksList?.setContent {
             val sectionsBlocks by viewModel.sectionsBlocks.collectAsState()
-            val selectedIndex = sectionsBlocks?.indexOfFirst { it.id == blockId } ?: 0
+            val selectedIndex = sectionsBlocks.indexOfFirst { it.id == blockId }
             OpenEdXTheme {
                 UnitSectionsList(
-                    sectionsBlocks = sectionsBlocks ?: listOf(),
+                    sectionsBlocks = sectionsBlocks,
                     selectedSection = selectedIndex
                 ) { index, block ->
                     if (index != selectedIndex) {

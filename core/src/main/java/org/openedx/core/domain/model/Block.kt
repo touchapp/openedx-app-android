@@ -24,6 +24,7 @@ data class Block(
     val descendants: List<String>,
     val descendantsType: BlockType,
     val completion: Double,
+    val containsGatedContent: Boolean?,
     val downloadModel: DownloadModel? = null
 ) {
     val isDownloadable: Boolean
@@ -47,6 +48,10 @@ data class Block(
     }
 
     fun isDownloaded() = downloadModel?.downloadedState == DownloadedState.DOWNLOADED
+
+    fun isGated(): Boolean {
+        return containsGatedContent == true
+    }
 
 }
 

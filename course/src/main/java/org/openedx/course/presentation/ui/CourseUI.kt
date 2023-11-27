@@ -1,10 +1,7 @@
 package org.openedx.course.presentation.ui
 
 import android.content.res.Configuration
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -141,7 +138,7 @@ fun CourseSectionCard(
 
     Column(modifier = Modifier
         .clickable { onItemClick(block) }
-        .background(if (block.completion == 1.0) Color(0xffF3F9F7) else Color.Transparent)
+        .background(if (block.completion == 1.0) MaterialTheme.appColors.surface else Color.Transparent)
     ) {
         Row(
             modifier
@@ -247,7 +244,7 @@ fun CourseSubsectionItem(
 
     Column(Modifier
         .clickable { onClick(block) }
-        .background(if (block.completion == 1.0) Color(0xffF3F9F7) else Color.Transparent)
+        .background(if (block.completion == 1.0) MaterialTheme.appColors.surface else Color.Transparent)
     ) {
         Row(
             modifier
@@ -695,44 +692,70 @@ fun UnitSectionsList(
 ) {
     LazyColumn(Modifier.fillMaxWidth()) {
         itemsIndexed(sectionsBlocks) { index, block ->
-            Column(
-                modifier = Modifier
+            Column {
+                if (block.isGated() && (index == 0 || !sectionsBlocks[index - 1].isGated())) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .size(16.dp),
+                            painter = painterResource(id = R.drawable.ic_course_gated),
+                            contentDescription = "gated"
+                        )
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 8.dp, end = 8.dp)
+                                .weight(1f),
+                            text = stringResource(id = R.string.course_gated_content_label),
+                            color = MaterialTheme.appColors.textSecondary,
+                            style = MaterialTheme.appTypography.labelSmall,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                        )
+                    }
+                    Divider()
+                }
+                Box(modifier = Modifier
                     .background(
                         if (index == selectedSection) MaterialTheme.appColors.surface else
                             MaterialTheme.appColors.background
                     )
                     .clickable { onSectionClick(index, block) }
-            ) {
-                Row(
-                    modifier = Modifier.padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
+                    Row(
                         modifier = Modifier
-                            .size(16.dp)
-                            .alpha(if (block.completion == 1.0) 1f else 0f),
-                        painter = painterResource(id = R.drawable.ic_course_check),
-                        contentDescription = "done",
-                        tint = Color(0xFF0D7D4D)
-                    )
-                    Text(
-                        modifier = Modifier
-                            .padding(start = 8.dp, end = 8.dp)
-                            .weight(1f),
-                        text = block.displayName,
-                        color = MaterialTheme.appColors.textPrimary,
-                        style = MaterialTheme.appTypography.labelMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Start,
-                    )
-                    Icon(
-                        modifier = Modifier
-                            .size(18.dp),
-                        painter = painterResource(id = getUnitBlockIcon(block)),
-                        contentDescription = null,
-                        tint = Color(0xFF707070)
-                    )
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .alpha(if (block.completion == 1.0) 1f else 0f),
+                            painter = painterResource(id = R.drawable.ic_course_check),
+                            contentDescription = "done"
+                        )
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 8.dp, end = 8.dp)
+                                .weight(1f),
+                            text = block.displayName,
+                            color = MaterialTheme.appColors.textPrimary,
+                            style = MaterialTheme.appTypography.labelMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                        )
+                        Icon(
+                            modifier = Modifier
+                                .size(18.dp),
+                            painter = painterResource(id = getUnitBlockIcon(block)),
+                            contentDescription = null,
+                            tint = Color(0xFF707070)
+                        )
+                    }
                 }
                 Divider()
             }
@@ -976,7 +999,8 @@ private val mockChapterBlock = Block(
     blockCounts = BlockCounts(1),
     descendants = emptyList(),
     descendantsType = BlockType.CHAPTER,
-    completion = 0.0
+    completion = 0.0,
+    containsGatedContent = false
 )
 
 private fun getUnitBlockIcon(block: Block): Int {

@@ -62,7 +62,7 @@ class CourseUnitContainerViewModel(
     val selectBlockDialogShowed: LiveData<Boolean>
         get() = _selectBlockDialogShowed
 
-    private val _sectionsBlocks = MutableStateFlow<List<Block>?>(listOf())
+    private val _sectionsBlocks = MutableStateFlow<List<Block>>(listOf())
     val sectionsBlocks = _sectionsBlocks.asStateFlow()
 
     var nextButtonText = ""
@@ -113,7 +113,7 @@ class CourseUnitContainerViewModel(
                 currentSectionIndex = blocks.indexOfFirst {
                     it.descendants.contains(blocks[currentVerticalIndex].id)
                 }
-                if (block.descendants.isNotEmpty()) {
+                if (block.descendants.isNotEmpty() || block.isGated()) {
                     descendants.clearAndAddAll(block.descendants)
                     descendantsBlocks.clearAndAddAll(blocks.filter { block.descendants.contains(it.id) })
                     _sectionsBlocks.value = getSectionsBlocks(blocks, getSectionId(blockId))
@@ -138,20 +138,25 @@ class CourseUnitContainerViewModel(
 
     private fun getSectionsBlocks(blocks: List<Block>, id: String): List<Block> {
         val resultList = mutableListOf<Block>()
+        val gatedList = mutableListOf<Block>()
         if (blocks.isEmpty()) return emptyList()
-        val selectedBlock = blocks.first {
-            it.id == id
-        }
+        val selectedBlock = blocks.first { it.id == id }
+
         for (descendant in selectedBlock.descendants) {
             val blockDescendant = blocks.find {
                 it.id == descendant
             }
             if (blockDescendant != null) {
                 if (blockDescendant.type == BlockType.VERTICAL) {
-                    resultList.add(blockDescendant)
+                    if (blockDescendant.isGated()) {
+                        gatedList.add(blockDescendant)
+                    } else {
+                        resultList.add(blockDescendant)
+                    }
                 }
             } else continue
         }
+        resultList.addAll(gatedList)
         return resultList
     }
 

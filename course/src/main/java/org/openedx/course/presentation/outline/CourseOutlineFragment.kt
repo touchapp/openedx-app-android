@@ -552,7 +552,8 @@ private val mockChapterBlock = Block(
     blockCounts = BlockCounts(1),
     descendants = emptyList(),
     descendantsType = BlockType.CHAPTER,
-    completion = 0.0
+    completion = 0.0,
+    containsGatedContent = false
 )
 private val mockSequentialBlock = Block(
     id = "id",
@@ -568,7 +569,8 @@ private val mockSequentialBlock = Block(
     blockCounts = BlockCounts(1),
     descendants = emptyList(),
     descendantsType = BlockType.CHAPTER,
-    completion = 0.0
+    completion = 0.0,
+    containsGatedContent = false
 )
 
 private val mockCourseStructure = CourseStructure(
