@@ -75,18 +75,6 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
             }
         }
 
-        binding.cvVideoTitle?.setContent {
-            OpenEdXTheme {
-                val block by viewModel.currentBlock.observeAsState()
-                if (block?.type == BlockType.VIDEO) {
-                    VideoTitle(
-                        text = block?.displayName ?: "",
-                        modifier = Modifier.statusBarsPadding()
-                    )
-                }
-            }
-        }
-
         binding.cvNavigationBar.setContent {
             NavigationBar()
         }
@@ -135,6 +123,8 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                 }
             }
         }
+
+        if (viewModel.selectBlockDialogShowed.value == true) handleSectionClick()
     }
 
     private fun updateNavigationButtons(updatedData: (String, Boolean, Boolean) -> Unit) {
@@ -241,13 +231,13 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
     }
 
     private fun handleSectionClick() {
-        if (binding.sectionsBlocksCardView?.visibility == View.VISIBLE) {
-            binding.sectionsBlocksCardView?.visibility = View.GONE
+        if (binding.sectionsBlocksList?.visibility == View.VISIBLE) {
+            binding.sectionsBlocksList?.visibility = View.GONE
             binding.sectionsBlocksBg?.visibility = View.GONE
             viewModel.hideSelectBlockDialog()
 
         } else {
-            binding.sectionsBlocksCardView?.visibility = View.VISIBLE
+            binding.sectionsBlocksList?.visibility = View.VISIBLE
             binding.sectionsBlocksBg?.visibility = View.VISIBLE
             viewModel.showSelectBlockDialog()
         }

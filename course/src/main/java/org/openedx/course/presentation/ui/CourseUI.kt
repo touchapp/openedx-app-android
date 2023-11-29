@@ -605,31 +605,29 @@ fun CourseUnitToolbar(
 ) {
     OpenEdXTheme {
         Column {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .displayCutoutForLandscape()
                     .zIndex(1f)
-                    .statusBarsPadding(),
-                verticalAlignment = Alignment.CenterVertically
+                    .statusBarsPadding()
             ) {
                 BackBtn { onBackClick() }
                 Text(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 12.dp)
-                        .weight(1f),
+                        .padding(horizontal = 56.dp)
+                        .align(Alignment.Center),
                     text = title,
                     color = MaterialTheme.appColors.textPrimary,
                     style = MaterialTheme.appTypography.titleSmall,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (numberOfPages > 1) {
                     Box(
                         modifier = Modifier
                             .padding(end = 12.dp)
+                            .align(Alignment.CenterEnd)
                     ) {
                         UnitCirclePageIndicator(
                             modifier = Modifier
@@ -690,74 +688,82 @@ fun UnitSectionsList(
     selectedSection: Int = 0,
     onSectionClick: (index: Int, block: Block) -> Unit
 ) {
-    LazyColumn(Modifier.fillMaxWidth()) {
-        itemsIndexed(sectionsBlocks) { index, block ->
-            Column {
-                if (block.isGated() && (index == 0 || !sectionsBlocks[index - 1].isGated())) {
-                    Row(
-                        modifier = Modifier.padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(align = Alignment.Top)
+            .displayCutoutForLandscape(),
+        border = BorderStroke(1.dp, MaterialTheme.colors.onSurface.copy(alpha = 0.12f))
+    ) {
+        LazyColumn(Modifier.fillMaxWidth()) {
+            itemsIndexed(sectionsBlocks) { index, block ->
+                Column {
+                    if (block.isGated() && (index == 0 || !sectionsBlocks[index - 1].isGated())) {
+                        Row(
+                            modifier = Modifier.padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                modifier = Modifier
+                                    .size(16.dp),
+                                painter = painterResource(id = R.drawable.ic_course_gated),
+                                contentDescription = "gated"
+                            )
+                            Text(
+                                modifier = Modifier
+                                    .padding(start = 8.dp, end = 8.dp)
+                                    .weight(1f),
+                                text = stringResource(id = R.string.course_gated_content_label),
+                                color = MaterialTheme.appColors.textSecondary,
+                                style = MaterialTheme.appTypography.labelSmall,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Start,
+                            )
+                        }
+                        Divider()
+                    }
+                    Box(modifier = Modifier
+                        .background(
+                            if (index == selectedSection) MaterialTheme.appColors.surface else
+                                MaterialTheme.appColors.background
+                        )
+                        .clickable { onSectionClick(index, block) }
                     ) {
-                        Image(
+                        Row(
                             modifier = Modifier
-                                .size(16.dp),
-                            painter = painterResource(id = R.drawable.ic_course_gated),
-                            contentDescription = "gated"
-                        )
-                        Text(
-                            modifier = Modifier
-                                .padding(start = 8.dp, end = 8.dp)
-                                .weight(1f),
-                            text = stringResource(id = R.string.course_gated_content_label),
-                            color = MaterialTheme.appColors.textSecondary,
-                            style = MaterialTheme.appTypography.labelSmall,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                        )
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .alpha(if (block.completion == 1.0) 1f else 0f),
+                                painter = painterResource(id = R.drawable.ic_course_check),
+                                contentDescription = "done"
+                            )
+                            Text(
+                                modifier = Modifier
+                                    .padding(start = 8.dp, end = 8.dp)
+                                    .weight(1f),
+                                text = block.displayName,
+                                color = MaterialTheme.appColors.textPrimary,
+                                style = MaterialTheme.appTypography.labelMedium,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Start,
+                            )
+                            Icon(
+                                modifier = Modifier
+                                    .size(18.dp),
+                                painter = painterResource(id = getUnitBlockIcon(block)),
+                                contentDescription = null,
+                                tint = Color(0xFF707070)
+                            )
+                        }
                     }
                     Divider()
                 }
-                Box(modifier = Modifier
-                    .background(
-                        if (index == selectedSection) MaterialTheme.appColors.surface else
-                            MaterialTheme.appColors.background
-                    )
-                    .clickable { onSectionClick(index, block) }
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Image(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .alpha(if (block.completion == 1.0) 1f else 0f),
-                            painter = painterResource(id = R.drawable.ic_course_check),
-                            contentDescription = "done"
-                        )
-                        Text(
-                            modifier = Modifier
-                                .padding(start = 8.dp, end = 8.dp)
-                                .weight(1f),
-                            text = block.displayName,
-                            color = MaterialTheme.appColors.textPrimary,
-                            style = MaterialTheme.appTypography.labelMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                        )
-                        Icon(
-                            modifier = Modifier
-                                .size(18.dp),
-                            painter = painterResource(id = getUnitBlockIcon(block)),
-                            contentDescription = null,
-                            tint = Color(0xFF707070)
-                        )
-                    }
-                }
-                Divider()
             }
         }
     }
