@@ -3,11 +3,9 @@ package org.openedx.course.presentation.unit.container
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Modifier
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -15,7 +13,6 @@ import androidx.viewpager2.widget.ViewPager2
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
-import org.openedx.core.BlockType
 import org.openedx.core.domain.model.Block
 import org.openedx.core.extension.serializable
 import org.openedx.core.presentation.course.CourseViewMode
@@ -31,7 +28,7 @@ import org.openedx.course.presentation.DialogListener
 import org.openedx.course.presentation.ui.CourseUnitToolbar
 import org.openedx.course.presentation.ui.NavigationUnitsButtons
 import org.openedx.course.presentation.ui.UnitSectionsList
-import org.openedx.course.presentation.ui.VideoTitle
+import org.openedx.course.presentation.ui.UnitSectionsTitle
 
 class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_container) {
 
@@ -84,8 +81,6 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
             val currentSection = sectionsBlocks.firstOrNull { it.id == blockId }
             val title =
                 if (currentSection == null) "" else viewModel.getModuleBlock(currentSection.id).displayName
-            val sectionName = currentSection?.displayName ?: ""
-            val blockShowed by viewModel.selectBlockDialogShowed.observeAsState()
 
             val index by viewModel.indexInContainer.observeAsState(1)
             val units by viewModel.verticalBlockCounts.observeAsState(1)
@@ -94,13 +89,23 @@ class CourseUnitContainerFragment : Fragment(R.layout.fragment_course_unit_conta
                 title = title,
                 numberOfPages = units,
                 selectedPage = index,
-                sectionName = sectionName,
-                sectionsCount = sectionsBlocks.size,
-                blockListShowed = blockShowed,
-                onBlockClick = { handleSectionClick() },
                 onBackClick = {
                     requireActivity().supportFragmentManager.popBackStack()
                 }
+            )
+        }
+
+        binding.unitSectionsTitle?.setContent {
+            val sectionsBlocks by viewModel.sectionsBlocks.collectAsState()
+            val currentSection = sectionsBlocks.firstOrNull { it.id == blockId }
+            val sectionName = currentSection?.displayName ?: ""
+            val blockShowed by viewModel.selectBlockDialogShowed.observeAsState()
+
+            UnitSectionsTitle(
+                sectionName = sectionName,
+                sectionsCount = sectionsBlocks.size,
+                blockListShowed = blockShowed,
+                onBlockClick = { handleSectionClick() }
             )
         }
 

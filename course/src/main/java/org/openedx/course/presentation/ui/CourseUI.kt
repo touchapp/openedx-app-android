@@ -597,87 +597,90 @@ fun CourseUnitToolbar(
     title: String,
     numberOfPages: Int,
     selectedPage: Int = 0,
-    sectionName: String,
-    sectionsCount: Int,
-    blockListShowed: Boolean?,
-    onBlockClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     OpenEdXTheme {
-        Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .displayCutoutForLandscape()
-                    .zIndex(1f)
-                    .statusBarsPadding()
-            ) {
-                BackBtn { onBackClick() }
-                Text(
-                    modifier = Modifier
-                        .padding(horizontal = 56.dp)
-                        .align(Alignment.Center),
-                    text = title,
-                    color = MaterialTheme.appColors.textPrimary,
-                    style = MaterialTheme.appTypography.titleSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (numberOfPages > 1) {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .align(Alignment.CenterEnd)
-                    ) {
-                        UnitCirclePageIndicator(
-                            modifier = Modifier
-                                .size(24.dp),
-                            numberOfPages = numberOfPages,
-                            selectedPage = selectedPage,
-                            selectedColor = MaterialTheme.appColors.primary,
-                            defaultColor = MaterialTheme.appColors.bottomSheetToggle
-                        )
-                    }
-                }
-            }
-
-            val textStyle = MaterialTheme.appTypography.titleMedium
-            val hasSections = sectionsCount > 0
-            var rowModifier = Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(
-                    horizontal = 16.dp,
-                    vertical = 8.dp
-                )
-            if (hasSections) {
-                rowModifier = rowModifier.noRippleClickable { onBlockClick() }
-            }
-
-            Row(
-                modifier = rowModifier,
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
+                .displayCutoutForLandscape()
+                .zIndex(1f)
+                .statusBarsPadding()
+        ) {
+            BackBtn { onBackClick() }
+            Text(
+                modifier = Modifier
+                    .padding(horizontal = 56.dp)
+                    .align(Alignment.Center),
+                text = title,
+                color = MaterialTheme.appColors.textPrimary,
+                style = MaterialTheme.appTypography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (numberOfPages > 1) {
+                Box(
                     modifier = Modifier
-                        .weight(1f),
-                    text = sectionName,
-                    color = MaterialTheme.appColors.textPrimary,
-                    style = textStyle,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start
-                )
-
-                if (hasSections) {
-                    Icon(
-                        modifier = Modifier.rotate(if (blockListShowed == true) 180f else 0f),
-                        painter = painterResource(id = R.drawable.ic_course_arrow_down),
-                        contentDescription = null,
-                        tint = MaterialTheme.appColors.textPrimary
+                        .padding(end = 12.dp)
+                        .align(Alignment.CenterEnd)
+                ) {
+                    UnitCirclePageIndicator(
+                        modifier = Modifier
+                            .size(24.dp),
+                        numberOfPages = numberOfPages,
+                        selectedPage = selectedPage,
+                        selectedColor = MaterialTheme.appColors.primary,
+                        defaultColor = MaterialTheme.appColors.bottomSheetToggle
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun UnitSectionsTitle(
+    sectionName: String,
+    sectionsCount: Int,
+    blockListShowed: Boolean?,
+    onBlockClick: () -> Unit
+) {
+    val textStyle = MaterialTheme.appTypography.titleMedium
+    val hasSections = sectionsCount > 0
+    var rowModifier = Modifier
+        .fillMaxWidth()
+        .padding(
+            horizontal = 16.dp,
+            vertical = 8.dp
+        )
+        .displayCutoutForLandscape()
+    if (hasSections) {
+        rowModifier = rowModifier.noRippleClickable { onBlockClick() }
+    }
+
+    Row(
+        modifier = rowModifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            modifier = Modifier
+                .weight(1f),
+            text = sectionName,
+            color = MaterialTheme.appColors.textPrimary,
+            style = textStyle,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Start
+        )
+
+        if (hasSections) {
+            Icon(
+                modifier = Modifier.rotate(if (blockListShowed == true) 180f else 0f),
+                painter = painterResource(id = R.drawable.ic_course_arrow_down),
+                contentDescription = null,
+                tint = MaterialTheme.appColors.textPrimary
+            )
         }
     }
 }
