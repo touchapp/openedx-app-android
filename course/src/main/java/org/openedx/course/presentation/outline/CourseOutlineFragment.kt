@@ -102,7 +102,7 @@ class CourseOutlineFragment : Fragment() {
                         viewModel.verticalClickedEvent(block.blockId, block.displayName)
                         router.navigateToCourseContainer(
                             requireActivity().supportFragmentManager,
-                            block.id,
+                            blockId = block.id,
                             courseId = viewModel.courseId,
                             courseName = block.displayName,
                             mode = CourseViewMode.FULL
@@ -115,7 +115,6 @@ class CourseOutlineFragment : Fragment() {
                                 requireActivity().supportFragmentManager,
                                 viewModel.courseId,
                                 sequential.id,
-                                sequential.displayName,
                                 CourseViewMode.FULL
                             )
                         }

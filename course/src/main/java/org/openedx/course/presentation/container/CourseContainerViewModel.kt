@@ -111,6 +111,10 @@ class CourseContainerViewModel(
         analytics.discussionTabClickedEvent(courseId, courseName)
     }
 
+    fun datesTabClickedEvent() {
+        analytics.datesTabClickedEvent(courseId, courseName)
+    }
+
     fun handoutsTabClickedEvent() {
         analytics.handoutsTabClickedEvent(courseId, courseName)
     }

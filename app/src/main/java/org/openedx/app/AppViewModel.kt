@@ -4,13 +4,13 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
 import androidx.room.RoomDatabase
-import org.openedx.core.BaseViewModel
-import org.openedx.core.SingleEventLiveData
-import org.openedx.app.system.notifier.AppNotifier
-import org.openedx.app.system.notifier.LogoutEvent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.openedx.app.system.notifier.AppNotifier
+import org.openedx.app.system.notifier.LogoutEvent
+import org.openedx.core.BaseViewModel
+import org.openedx.core.SingleEventLiveData
 import org.openedx.core.data.storage.CorePreferences
 
 class AppViewModel(
@@ -21,9 +21,9 @@ class AppViewModel(
     private val analytics: AppAnalytics
 ) : BaseViewModel() {
 
+    private val _logoutUser = SingleEventLiveData<Unit>()
     val logoutUser: LiveData<Unit>
         get() = _logoutUser
-    private val _logoutUser = SingleEventLiveData<Unit>()
 
     private var logoutHandledAt: Long = 0
 

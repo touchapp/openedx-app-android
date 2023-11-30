@@ -29,7 +29,21 @@ data class AppColors(
     val certificateForeground: Color,
     val bottomSheetToggle: Color,
     val warning: Color,
-    val info: Color
+    val info: Color,
+
+    val rateStars: Color,
+    val inactiveButtonBackground: Color,
+    val inactiveButtonText: Color,
+
+    val accessGreen: Color,
+
+    val datesBadgeDefault: Color,
+    val datesBadgeTextDefault: Color,
+    val datesBadgePastDue: Color,
+    val datesBadgeToday: Color,
+    val datesBadgeTextToday: Color, // also used for locked date block
+    val datesBadgeDue: Color, // Also used for not release date block text and stoke
+    val datesBadgeTextDue: Color // Also used for locked date block color
 ) {
     val primary: Color get() = material.primary
     val primaryVariant: Color get() = material.primaryVariant
