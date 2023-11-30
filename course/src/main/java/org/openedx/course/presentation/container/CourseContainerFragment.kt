@@ -108,6 +108,7 @@ class CourseContainerFragment : Fragment(R.layout.fragment_course_container) {
                                 0 -> R.string.course_navigation_course
                                 1 -> R.string.course_navigation_video
                                 2 -> R.string.course_navigation_discussion
+                                3 -> R.string.course_navigation_dates
                                 else -> R.string.course_navigation_handouts
                             }
                         )

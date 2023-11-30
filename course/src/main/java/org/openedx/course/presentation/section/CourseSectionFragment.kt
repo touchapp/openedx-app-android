@@ -17,8 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
@@ -164,15 +162,6 @@ private fun CourseSectionScreen(
             )
         }
 
-        val listPadding by remember(key1 = windowSize) {
-            mutableStateOf(
-                windowSize.windowSizeValue(
-                    expanded = PaddingValues(vertical = 24.dp),
-                    compact = PaddingValues(24.dp)
-                )
-            )
-        }
-
         HandleUIMessage(uiMessage = uiMessage, scaffoldState = scaffoldState)
 
         Box(
@@ -222,10 +211,11 @@ private fun CourseSectionScreen(
 
                         is CourseSectionUIState.Blocks -> {
                             Column(Modifier.fillMaxSize()) {
-                                LazyColumn() {
+                                LazyColumn {
                                     items(uiState.blocks) { block ->
                                         CourseSubsectionItem(
-                                            modifier = Modifier,
+                                            modifier = Modifier
+                                                .padding(end = 20.dp),
                                             block = block,
                                             downloadedState = uiState.downloadedState[block.id],
                                             onClick = {

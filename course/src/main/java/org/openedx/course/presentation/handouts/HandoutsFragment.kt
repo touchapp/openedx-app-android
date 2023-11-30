@@ -112,12 +112,10 @@ private fun HandoutsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(it)
-                .statusBarsInset()
                 .displayCutoutForLandscape(),
             contentAlignment = Alignment.TopCenter
         ) {
             Column(screenWidth) {
-                Spacer(Modifier.height(6.dp))
                 Surface(
                     color = MaterialTheme.appColors.background
                 ) {

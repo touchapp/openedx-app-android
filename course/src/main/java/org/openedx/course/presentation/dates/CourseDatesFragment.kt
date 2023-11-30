@@ -210,27 +210,6 @@ internal fun CourseDatesScreen(
             Column(
                 modifierScreenWidth
             ) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .zIndex(1f), contentAlignment = Alignment.CenterStart
-                ) {
-                    BackBtn {
-                        onBackClick()
-                    }
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 56.dp),
-                        text = courseTitle,
-                        color = MaterialTheme.appColors.textPrimary,
-                        style = MaterialTheme.appTypography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center
-                    )
-                }
-                Spacer(Modifier.height(6.dp))
                 Surface(
                     color = MaterialTheme.appColors.background,
                     shape = MaterialTheme.appShapes.screenBackgroundShape

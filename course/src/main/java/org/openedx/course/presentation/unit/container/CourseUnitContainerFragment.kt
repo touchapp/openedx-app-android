@@ -4,12 +4,8 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.view.LayoutInflater
 import android.view.View
-import androidx.compose.runtime.*
-import androidx.compose.foundation.layout.statusBarsPadding
 import android.view.ViewGroup
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -21,11 +17,11 @@ import com.google.android.gms.cast.framework.CastButtonFactory
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
+import org.openedx.core.BlockType
 import org.openedx.core.domain.model.Block
 import org.openedx.core.extension.serializable
 import org.openedx.core.presentation.course.CourseViewMode
 import org.openedx.core.presentation.global.InsetHolder
-import org.openedx.core.presentation.global.viewBinding
 import org.openedx.core.ui.rememberWindowSize
 import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.course.R

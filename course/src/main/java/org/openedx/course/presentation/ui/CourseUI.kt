@@ -856,7 +856,7 @@ fun CourseToolbar(
                     .padding(horizontal = 56.dp),
                 text = title,
                 color = MaterialTheme.appColors.textPrimary,
-                style = MaterialTheme.appTypography.titleSmall,
+                style = MaterialTheme.appTypography.titleMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
