@@ -70,6 +70,7 @@ import org.openedx.discussion.system.notifier.DiscussionNotifier
 import org.openedx.notifications.PushManager
 import org.openedx.notifications.data.storage.NotificationsPreferences
 import org.openedx.notifications.presentation.NotificationsAnalytics
+import org.openedx.notifications.presentation.NotificationsRouter
 import org.openedx.profile.data.storage.ProfilePreferences
 import org.openedx.profile.presentation.ProfileAnalytics
 import org.openedx.profile.presentation.ProfileRouter
@@ -131,6 +132,8 @@ val appModule = module {
     single<ProfileRouter> { get<AppRouter>() }
     single<WhatsNewRouter> { get<AppRouter>() }
     single<AppUpgradeRouter> { get<AppRouter>() }
+    single<NotificationsRouter> { get<AppRouter>() }
+    
     single { DeepLinkRouter(get(), get(), get(), get(), get(), get()) }
 
     single { NetworkConnection(get()) }
