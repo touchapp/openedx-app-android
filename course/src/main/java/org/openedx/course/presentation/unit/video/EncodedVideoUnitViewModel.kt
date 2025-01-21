@@ -2,17 +2,24 @@ package org.openedx.course.presentation.unit.video
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.media3.cast.CastPlayer
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.Clock
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.DefaultAnalyticsCollector
+import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.trackselection.AdaptiveTrackSelection
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -25,6 +32,7 @@ import org.openedx.core.domain.model.VideoQuality
 import org.openedx.core.module.TranscriptManager
 import org.openedx.core.system.connection.NetworkConnection
 import org.openedx.core.system.notifier.CourseNotifier
+import org.openedx.core.utils.LocaleUtils
 import org.openedx.core.utils.Logger
 import org.openedx.course.data.repository.CourseRepository
 import org.openedx.course.presentation.CourseAnalytics
@@ -66,11 +74,24 @@ class EncodedVideoUnitViewModel(
 
     var isPlayerSetUp = false
 
+    var selectedLanguage: String = ""
+    val subtitleConfigurations: List<MediaItem.SubtitleConfiguration>
+        get() = transcripts
+            .toSortedMap(
+                compareBy { LocaleUtils.getLanguageByLanguageCode(it) }
+            )
+            .map { (language, uri) ->
+                val selectionFlags =
+                    if (language == selectedLanguage) C.SELECTION_FLAG_DEFAULT else 0
+
+                MediaItem.SubtitleConfiguration.Builder(Uri.parse(uri))
+                    .setMimeType(MimeTypes.APPLICATION_SUBRIP)
+                    .setSelectionFlags(selectionFlags)
+                    .setLanguage(language)
+                    .build()
+            }
+
     private val exoPlayerListener = object : Player.Listener {
-        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-            super.onPlayWhenReadyChanged(playWhenReady, reason)
-            isPlaying = playWhenReady
-        }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             super.onPlaybackStateChanged(playbackState)
@@ -78,7 +99,6 @@ class EncodedVideoUnitViewModel(
                 _isVideoEnded.value = true
                 markBlockCompleted(blockId)
             }
-
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -107,6 +127,14 @@ class EncodedVideoUnitViewModel(
                 getActivePlayer()?.duration ?: 0L
             )
         }
+
+        override fun onTracksChanged(tracks: Tracks) {
+            super.onTracksChanged(tracks)
+            selectedLanguage = tracks.groups
+                .firstOrNull { it.isSelected && it.type == C.TRACK_TYPE_TEXT }
+                ?.getTrackFormat(0)
+                ?.language ?: ""
+        }
     }
 
     @androidx.media3.common.util.UnstableApi
@@ -129,7 +157,6 @@ class EncodedVideoUnitViewModel(
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
         exoPlayer?.addListener(exoPlayerListener)
-        getActivePlayer()?.playWhenReady = isPlaying
     }
 
     override fun onPause(owner: LifecycleOwner) {
@@ -188,9 +215,33 @@ class EncodedVideoUnitViewModel(
         logVideoLoadedEvent(videoUrl)
     }
 
+    fun applyPlayerMedia(mediaItem: MediaItem) {
+        if (!isPlayerSetUp) {
+            setPlayerMedia(mediaItem)
+            getActivePlayer()?.prepare()
+            isPlayerSetUp = true
+        }
+    }
+
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun setPlayerMedia(mediaItem: MediaItem) {
+        if (videoUrl.endsWith(HLS_EXT)) {
+            val factory = DefaultDataSource.Factory(context)
+            val mediaSource: HlsMediaSource =
+                HlsMediaSource.Factory(factory).createMediaSource(mediaItem)
+            exoPlayer?.setMediaSource(mediaSource, getCurrentVideoTime())
+        } else {
+            getActivePlayer()?.setMediaItem(
+                mediaItem,
+                getCurrentVideoTime()
+            )
+        }
+    }
+
     private fun getVideoQuality() = preferencesManager.videoSettings.videoStreamingQuality
 
     private companion object {
         private const val TAG = "EncodedVideoUnitViewModel"
+        private const val HLS_EXT = ".m3u8"
     }
 }

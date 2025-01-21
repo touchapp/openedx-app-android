@@ -18,14 +18,13 @@ import androidx.media3.cast.SessionAvailabilityListener
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.window.layout.WindowMetricsCalculator
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import org.openedx.core.extension.computeWindowSizeClasses
 import org.openedx.core.extension.dpToPixel
+import org.openedx.core.extension.isTrue
 import org.openedx.core.extension.objectToString
 import org.openedx.core.extension.stringToObject
 import org.openedx.core.presentation.dialog.appreview.AppReviewManager
@@ -38,8 +37,6 @@ import org.openedx.core.utils.LocaleUtils
 import org.openedx.course.R
 import org.openedx.course.databinding.FragmentVideoUnitBinding
 import org.openedx.course.presentation.CourseAnalyticsEvent
-import org.openedx.course.presentation.CourseAnalyticsKey
-import org.openedx.course.presentation.CourseRouter
 import org.openedx.course.presentation.ui.VideoSubtitles
 import org.openedx.course.presentation.ui.VideoTitle
 import kotlin.math.roundToInt
@@ -53,7 +50,6 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
             requireArguments().getString(ARG_BLOCK_ID, ""),
         )
     }
-    private val router by inject<CourseRouter>()
     private val appReviewManager by inject<AppReviewManager> { parametersOf(requireActivity()) }
 
     private var windowSize: WindowSize? = null
@@ -174,29 +170,23 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
     }
 
     @androidx.annotation.OptIn(UnstableApi::class)
-    private fun initPlayer() {
+    internal fun initPlayer() {
         with(binding) {
+            playerView.player = null
             playerView.player = viewModel.getActivePlayer()
             playerView.setShowNextButton(false)
             playerView.setShowPreviousButton(false)
             showVideoControllerIndefinitely(false)
-
             val movieMetadata = MediaMetadata.Builder()
                 .setMediaType(MediaMetadata.MEDIA_TYPE_MOVIE)
                 .build()
             val mediaItem = MediaItem.Builder().setMediaMetadata(movieMetadata)
                 .setUri(viewModel.videoUrl)
-                .setMimeType("video/*")
+                .setSubtitleConfigurations(viewModel.subtitleConfigurations)
                 .build()
-
-            if (!viewModel.isPlayerSetUp) {
-                setPlayerMedia(mediaItem)
-                viewModel.getActivePlayer()?.prepare()
-                viewModel.getActivePlayer()?.playWhenReady = viewModel.isPlaying && isResumed
-                viewModel.isPlayerSetUp = true
-            }
+            viewModel.applyPlayerMedia(mediaItem)
             viewModel.getActivePlayer()?.seekTo(viewModel.getCurrentVideoTime())
-
+            viewModel.exoPlayer?.playWhenReady = viewModel.isPlaying
             viewModel.castPlayer?.setSessionAvailabilityListener(
                 object : SessionAvailabilityListener {
                     override fun onCastSessionAvailable() {
@@ -228,16 +218,8 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
                 if (viewModel.isCastActive)
                     return@setFullscreenButtonClickListener
 
-                router.navigateToFullScreenVideo(
-                    requireActivity().supportFragmentManager,
-                    viewModel.videoUrl,
-                    viewModel.exoPlayer?.currentPosition ?: 0L,
-                    viewModel.exoPlayer?.duration?: 0L,
-                    viewModel.blockId,
-                    viewModel.courseId,
-                    viewModel.isPlaying,
-                    viewModel.transcripts,
-                )
+                viewModel.isPlaying = viewModel.getActivePlayer()?.isPlaying.isTrue()
+                VideoFullScreenFragment.newInstance().show(childFragmentManager, VideoFullScreenFragment.TAG)
             }
         }
     }
@@ -271,21 +253,6 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
         } else {
             binding.playerView.controllerAutoShow = true
             binding.playerView.controllerShowTimeoutMs = 2000
-        }
-    }
-
-    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    private fun setPlayerMedia(mediaItem: MediaItem) {
-        if (viewModel.videoUrl.endsWith(".m3u8")) {
-            val factory = DefaultDataSource.Factory(requireContext())
-            val mediaSource: HlsMediaSource =
-                HlsMediaSource.Factory(factory).createMediaSource(mediaItem)
-            viewModel.exoPlayer?.setMediaSource(mediaSource, viewModel.getCurrentVideoTime())
-        } else {
-            viewModel.getActivePlayer()?.setMediaItem(
-                mediaItem,
-                viewModel.getCurrentVideoTime()
-            )
         }
     }
 
