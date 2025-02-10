@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.media3.cast.CastPlayer
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
@@ -74,8 +75,9 @@ class EncodedVideoUnitViewModel(
 
     var isPlayerSetUp = false
 
-    var selectedLanguage: String = ""
-    val subtitleConfigurations: List<MediaItem.SubtitleConfiguration>
+    var selectedLanguage: String = transcriptLanguage
+
+    private val subtitleConfigurations: List<MediaItem.SubtitleConfiguration>
         get() = transcripts
             .toSortedMap(
                 compareBy { LocaleUtils.getLanguageByLanguageCode(it) }
@@ -90,6 +92,10 @@ class EncodedVideoUnitViewModel(
                     .setLanguage(language)
                     .build()
             }
+
+    private val movieMetadata = MediaMetadata.Builder()
+        .setMediaType(MediaMetadata.MEDIA_TYPE_MOVIE)
+        .build()
 
     private val exoPlayerListener = object : Player.Listener {
 
@@ -215,12 +221,21 @@ class EncodedVideoUnitViewModel(
         logVideoLoadedEvent(videoUrl)
     }
 
-    fun applyPlayerMedia(mediaItem: MediaItem) {
+    fun applyPlayerMedia() {
         if (!isPlayerSetUp) {
-            setPlayerMedia(mediaItem)
+            setPlayerMedia(getMediaItem())
             getActivePlayer()?.prepare()
             isPlayerSetUp = true
         }
+    }
+
+    fun getMediaItem() = MediaItem.Builder().setMediaMetadata(movieMetadata)
+        .setUri(videoUrl)
+        .setSubtitleConfigurations(subtitleConfigurations)
+        .build()
+
+    fun updated() {
+        _isUpdated.value = true
     }
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)

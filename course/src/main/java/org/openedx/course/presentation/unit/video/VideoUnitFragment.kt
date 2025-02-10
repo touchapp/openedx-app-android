@@ -15,8 +15,6 @@ import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.media3.cast.SessionAvailabilityListener
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.util.UnstableApi
 import androidx.window.layout.WindowMetricsCalculator
 import org.koin.android.ext.android.inject
@@ -177,15 +175,7 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
             playerView.setShowNextButton(false)
             playerView.setShowPreviousButton(false)
             showVideoControllerIndefinitely(false)
-            val movieMetadata = MediaMetadata.Builder()
-                .setMediaType(MediaMetadata.MEDIA_TYPE_MOVIE)
-                .build()
-            val mediaItem = MediaItem.Builder().setMediaMetadata(movieMetadata)
-                .setUri(viewModel.videoUrl)
-                .setSubtitleConfigurations(viewModel.subtitleConfigurations)
-                .build()
-            viewModel.applyPlayerMedia(mediaItem)
-            viewModel.getActivePlayer()?.seekTo(viewModel.getCurrentVideoTime())
+            viewModel.applyPlayerMedia()
             viewModel.exoPlayer?.playWhenReady = viewModel.isPlaying
             viewModel.castPlayer?.setSessionAvailabilityListener(
                 object : SessionAvailabilityListener {
@@ -195,8 +185,8 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
                         viewModel.exoPlayer?.pause()
                         playerView.player = viewModel.castPlayer
                         viewModel.castPlayer?.setMediaItem(
-                            mediaItem,
-                            viewModel.exoPlayer?.currentPosition ?: 0L
+                            viewModel.getMediaItem(),
+                            viewModel.getCurrentVideoTime()
                         )
                         viewModel.castPlayer?.playWhenReady = true
                         showVideoControllerIndefinitely(true)

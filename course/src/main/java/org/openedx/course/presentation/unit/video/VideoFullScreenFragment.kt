@@ -1,6 +1,5 @@
 package org.openedx.course.presentation.unit.video
 
-import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -19,14 +18,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import org.koin.android.ext.android.inject
 import org.koin.core.parameter.parametersOf
-import org.openedx.core.extension.isTrue
 import org.openedx.core.presentation.dialog.appreview.AppReviewManager
 import org.openedx.core.ui.theme.OpenEdXTheme
 import org.openedx.core.R as CoreR
@@ -60,11 +56,6 @@ class VideoFullScreenFragment : DialogFragment() {
         }
     }
 
-    override fun onDismiss(dialog: DialogInterface) {
-        viewModel.isPlaying = viewModel.exoPlayer?.isPlaying.isTrue()
-        super.onDismiss(dialog)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_FRAME, CoreR.style.Theme_OpenEdX_Dialog_FullScreen)
@@ -92,7 +83,7 @@ class VideoFullScreenFragment : DialogFragment() {
         DisposableEffect(Unit) {
             onDispose {
                 currentView.keepScreenOn = false
-                viewModel.isPlayerSetUp = false
+                viewModel.updated()
                 (parentFragment as? VideoUnitFragment)?.initPlayer()
             }
         }
@@ -107,17 +98,6 @@ class VideoFullScreenFragment : DialogFragment() {
                     setShowNextButton(false)
                     setShowPreviousButton(false)
                     setShowSubtitleButton(true)
-                    val movieMetadata = MediaMetadata.Builder()
-                        .setMediaType(MediaMetadata.MEDIA_TYPE_MOVIE)
-                        .build()
-                    val mediaItem = MediaItem.Builder().setMediaMetadata(movieMetadata)
-                        .setUri(viewModel.videoUrl)
-                        .setSubtitleConfigurations(viewModel.subtitleConfigurations)
-                        .build()
-                    viewModel.applyPlayerMedia(mediaItem)
-                    viewModel.getActivePlayer()?.seekTo(viewModel.getCurrentVideoTime())
-                    viewModel.exoPlayer?.addListener(exoPlayerListener)
-                    viewModel.exoPlayer?.playWhenReady = viewModel.isPlaying
                     setFullscreenButtonClickListener { _ ->
                         dismiss()
                     }
