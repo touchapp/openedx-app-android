@@ -83,8 +83,7 @@ class VideoFullScreenFragment : DialogFragment() {
         DisposableEffect(Unit) {
             onDispose {
                 currentView.keepScreenOn = false
-                viewModel.updated()
-                (parentFragment as? VideoUnitFragment)?.initPlayer()
+                viewModel.leaveFullscreen()
             }
         }
         AndroidView(

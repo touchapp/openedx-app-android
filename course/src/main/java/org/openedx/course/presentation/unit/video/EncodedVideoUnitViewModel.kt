@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.viewModelScope
 import androidx.media3.cast.CastPlayer
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -15,6 +17,7 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.Clock
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -27,6 +30,9 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import androidx.media3.extractor.DefaultExtractorsFactory
 import com.google.android.gms.cast.framework.CastContext
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.mapNotNull
 import org.openedx.core.data.storage.CorePreferences
 import org.openedx.core.domain.model.VideoPlaybackSpeed
 import org.openedx.core.domain.model.VideoQuality
@@ -75,7 +81,17 @@ class EncodedVideoUnitViewModel(
 
     var isPlayerSetUp = false
 
-    var selectedLanguage: String = transcriptLanguage
+    var selectedLanguage: String = ""
+
+    @UnstableApi
+    val onTranscriptLoaded = transcriptObject.asFlow().distinctUntilChanged().mapNotNull {
+        exoPlayer?.currentMediaItem?.buildUpon()
+            ?.setSubtitleConfigurations(subtitleConfigurations)?.build()
+            ?.let { mediaItem ->
+                exoPlayer?.clearMediaItems()
+                exoPlayer?.addMediaItem(mediaItem)
+            }
+    }.launchIn(viewModelScope)
 
     private val subtitleConfigurations: List<MediaItem.SubtitleConfiguration>
         get() = transcripts
@@ -143,7 +159,7 @@ class EncodedVideoUnitViewModel(
         }
     }
 
-    @androidx.media3.common.util.UnstableApi
+    @UnstableApi
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
         if (exoPlayer != null) {
@@ -183,7 +199,7 @@ class EncodedVideoUnitViewModel(
         }
     }
 
-    @androidx.media3.common.util.UnstableApi
+    @UnstableApi
     fun releasePlayers() {
         exoPlayer?.release()
         castPlayer?.release()
@@ -191,22 +207,9 @@ class EncodedVideoUnitViewModel(
         castPlayer = null
     }
 
-    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    @UnstableApi
     fun initPlayer() {
-        val videoQuality = getVideoQuality()
-        val params = DefaultTrackSelector.Parameters.Builder(context)
-            .apply {
-                if (videoQuality != VideoQuality.AUTO) {
-                    setMaxVideoSize(videoQuality.width, videoQuality.height)
-                    setViewportSize(videoQuality.width, videoQuality.height, false)
-                }
-            }
-            .build()
-
-        val factory = AdaptiveTrackSelection.Factory()
-        val selector = DefaultTrackSelector(context, factory)
-        selector.parameters = params
-
+        val selector = applyTrackSelector(isSubtitlesDisabled = true)
         exoPlayer = ExoPlayer.Builder(
             context,
             DefaultRenderersFactory(context),
@@ -221,6 +224,27 @@ class EncodedVideoUnitViewModel(
         logVideoLoadedEvent(videoUrl)
     }
 
+    @UnstableApi
+    private fun applyTrackSelector(isSubtitlesDisabled: Boolean): DefaultTrackSelector {
+        val videoQuality = getVideoQuality()
+        val params = DefaultTrackSelector.Parameters.Builder(context)
+            .apply {
+                if (videoQuality != VideoQuality.AUTO) {
+                    setMaxVideoSize(videoQuality.width, videoQuality.height)
+                    setViewportSize(videoQuality.width, videoQuality.height, false)
+                }
+            }
+            .setRendererDisabled(C.TRACK_TYPE_TEXT, isSubtitlesDisabled)
+            .build()
+
+        val factory = AdaptiveTrackSelection.Factory()
+        val selector = DefaultTrackSelector(context, factory)
+        selector.parameters = params
+        exoPlayer?.trackSelectionParameters = params
+        return selector
+    }
+
+    @UnstableApi
     fun applyPlayerMedia() {
         if (!isPlayerSetUp) {
             setPlayerMedia(getMediaItem())
@@ -231,14 +255,20 @@ class EncodedVideoUnitViewModel(
 
     fun getMediaItem() = MediaItem.Builder().setMediaMetadata(movieMetadata)
         .setUri(videoUrl)
-        .setSubtitleConfigurations(subtitleConfigurations)
         .build()
 
-    fun updated() {
+    @UnstableApi
+    fun enterFullscreen() {
+        applyTrackSelector(isSubtitlesDisabled = false)
+    }
+
+    @UnstableApi
+    fun leaveFullscreen() {
+        applyTrackSelector(isSubtitlesDisabled = true)
         _isUpdated.value = true
     }
 
-    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    @UnstableApi
     private fun setPlayerMedia(mediaItem: MediaItem) {
         if (videoUrl.endsWith(HLS_EXT)) {
             val factory = DefaultDataSource.Factory(context)

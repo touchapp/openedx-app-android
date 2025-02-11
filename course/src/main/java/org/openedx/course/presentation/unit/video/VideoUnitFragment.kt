@@ -168,7 +168,7 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
     }
 
     @androidx.annotation.OptIn(UnstableApi::class)
-    internal fun initPlayer() {
+    private fun initPlayer() {
         with(binding) {
             playerView.player = null
             playerView.player = viewModel.getActivePlayer()
@@ -209,6 +209,7 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
                     return@setFullscreenButtonClickListener
 
                 viewModel.isPlaying = viewModel.getActivePlayer()?.isPlaying.isTrue()
+                viewModel.enterFullscreen()
                 VideoFullScreenFragment.newInstance().show(childFragmentManager, VideoFullScreenFragment.TAG)
             }
         }
