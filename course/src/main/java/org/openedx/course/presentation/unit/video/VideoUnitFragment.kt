@@ -14,9 +14,12 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.cast.SessionAvailabilityListener
 import androidx.media3.common.util.UnstableApi
 import androidx.window.layout.WindowMetricsCalculator
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
@@ -160,11 +163,11 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
             }
         }
 
-        viewModel.isVideoEnded.observe(viewLifecycleOwner) { isVideoEnded ->
-            if (isVideoEnded && !appReviewManager.isDialogShowed) {
+        viewModel.state.onEach {
+            if (it.isVideoEnded && !appReviewManager.isDialogShowed) {
                 appReviewManager.tryToOpenRateDialog()
             }
-        }
+        }.launchIn(lifecycleScope)
     }
 
     @androidx.annotation.OptIn(UnstableApi::class)
@@ -181,7 +184,7 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
                 object : SessionAvailabilityListener {
                     override fun onCastSessionAvailable() {
                         viewModel.logCastConnection(CourseAnalyticsEvent.CAST_CONNECTED)
-                        viewModel.isCastActive = true
+                        viewModel.changeCastState(true)
                         viewModel.exoPlayer?.pause()
                         playerView.player = viewModel.castPlayer
                         viewModel.castPlayer?.setMediaItem(
@@ -194,7 +197,7 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
 
                     override fun onCastSessionUnavailable() {
                         viewModel.logCastConnection(CourseAnalyticsEvent.CAST_DISCONNECTED)
-                        viewModel.isCastActive = false
+                        viewModel.changeCastState(false)
                         playerView.player = viewModel.exoPlayer
                         viewModel.exoPlayer?.seekTo(viewModel.castPlayer?.currentPosition ?: 0L)
                         viewModel.castPlayer?.stop()
@@ -205,7 +208,7 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
             )
 
             playerView.setFullscreenButtonClickListener {
-                if (viewModel.isCastActive)
+                if (viewModel.state.value.isCastActive)
                     return@setFullscreenButtonClickListener
 
                 viewModel.isPlaying = viewModel.getActivePlayer()?.isPlaying.isTrue()
@@ -229,7 +232,6 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
     override fun onDestroy() {
         if (!requireActivity().isChangingConfigurations) {
             viewModel.releasePlayers()
-            viewModel.isPlayerSetUp = false
         }
         handler.removeCallbacks(videoTimeRunnable)
         super.onDestroy()

@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import androidx.media3.cast.CastPlayer
@@ -30,9 +28,12 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import androidx.media3.extractor.DefaultExtractorsFactory
 import com.google.android.gms.cast.framework.CastContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.update
 import org.openedx.core.data.storage.CorePreferences
 import org.openedx.core.domain.model.VideoPlaybackSpeed
 import org.openedx.core.domain.model.VideoQuality
@@ -66,9 +67,6 @@ class EncodedVideoUnitViewModel(
     courseAnalytics
 ) {
     private val logger = Logger(TAG)
-    private val _isVideoEnded = MutableLiveData(false)
-    val isVideoEnded: LiveData<Boolean>
-        get() = _isVideoEnded
 
     var exoPlayer: ExoPlayer? = null
         private set
@@ -77,21 +75,23 @@ class EncodedVideoUnitViewModel(
     var castPlayer: CastPlayer? = null
         private set
 
-    var isCastActive = false
+    private val _state = MutableStateFlow(PlayerState())
+    internal val state: StateFlow<PlayerState> = _state
 
-    var isPlayerSetUp = false
-
-    var selectedLanguage: String = ""
-
-    @UnstableApi
-    val onTranscriptLoaded = transcriptObject.asFlow().distinctUntilChanged().mapNotNull {
-        exoPlayer?.currentMediaItem?.buildUpon()
-            ?.setSubtitleConfigurations(subtitleConfigurations)?.build()
-            ?.let { mediaItem ->
-                exoPlayer?.clearMediaItems()
-                exoPlayer?.addMediaItem(mediaItem)
+    init {
+        transcriptObject.asFlow().distinctUntilChanged().mapNotNull {
+            if (!state.value.isSubtitlesReady) {
+                exoPlayer?.currentMediaItem?.buildUpon()
+                    ?.setSubtitleConfigurations(subtitleConfigurations)?.build()
+                    ?.let { mediaItem ->
+                        exoPlayer?.clearMediaItems()
+                        exoPlayer?.addMediaItem(mediaItem)
+                        exoPlayer?.seekTo(getCurrentVideoTime())
+                        _state.update { it.copy(isSubtitlesReady = true) }
+                    }
             }
-    }.launchIn(viewModelScope)
+        }.launchIn(viewModelScope)
+    }
 
     private val subtitleConfigurations: List<MediaItem.SubtitleConfiguration>
         get() = transcripts
@@ -100,7 +100,7 @@ class EncodedVideoUnitViewModel(
             )
             .map { (language, uri) ->
                 val selectionFlags =
-                    if (language == selectedLanguage) C.SELECTION_FLAG_DEFAULT else 0
+                    if (language == state.value.selectedLanguage) C.SELECTION_FLAG_DEFAULT else 0
 
                 MediaItem.SubtitleConfiguration.Builder(Uri.parse(uri))
                     .setMimeType(MimeTypes.APPLICATION_SUBRIP)
@@ -118,7 +118,7 @@ class EncodedVideoUnitViewModel(
         override fun onPlaybackStateChanged(playbackState: Int) {
             super.onPlaybackStateChanged(playbackState)
             if (playbackState == Player.STATE_ENDED) {
-                _isVideoEnded.value = true
+                _state.update { it.copy(isVideoEnded = true) }
                 markBlockCompleted(blockId)
             }
         }
@@ -152,10 +152,11 @@ class EncodedVideoUnitViewModel(
 
         override fun onTracksChanged(tracks: Tracks) {
             super.onTracksChanged(tracks)
-            selectedLanguage = tracks.groups
+            val selectedLanguage = tracks.groups
                 .firstOrNull { it.isSelected && it.type == C.TRACK_TYPE_TEXT }
                 ?.getTrackFormat(0)
                 ?.language ?: ""
+            _state.update { it.copy(selectedLanguage = selectedLanguage) }
         }
     }
 
@@ -183,7 +184,7 @@ class EncodedVideoUnitViewModel(
 
     override fun onPause(owner: LifecycleOwner) {
         super.onPause(owner)
-        if (isCastActive) {
+        if (state.value.isCastActive) {
             getActivePlayer()?.release()
         } else {
             exoPlayer?.removeListener(exoPlayerListener)
@@ -192,7 +193,7 @@ class EncodedVideoUnitViewModel(
     }
 
     fun getActivePlayer(): Player? {
-        return if (isCastActive) {
+        return if (state.value.isCastActive) {
             castPlayer
         } else {
             exoPlayer
@@ -201,6 +202,7 @@ class EncodedVideoUnitViewModel(
 
     @UnstableApi
     fun releasePlayers() {
+        _state.update { it.copy(isPlayerSetUp = false) }
         exoPlayer?.release()
         castPlayer?.release()
         exoPlayer = null
@@ -246,10 +248,10 @@ class EncodedVideoUnitViewModel(
 
     @UnstableApi
     fun applyPlayerMedia() {
-        if (!isPlayerSetUp) {
+        if (!state.value.isPlayerSetUp) {
             setPlayerMedia(getMediaItem())
             getActivePlayer()?.prepare()
-            isPlayerSetUp = true
+            _state.update { it.copy(isPlayerSetUp = true) }
         }
     }
 
@@ -266,6 +268,10 @@ class EncodedVideoUnitViewModel(
     fun leaveFullscreen() {
         applyTrackSelector(isSubtitlesDisabled = true)
         _isUpdated.value = true
+    }
+
+    fun changeCastState(isActive: Boolean) {
+        _state.update { it.copy(isCastActive = isActive) }
     }
 
     @UnstableApi
