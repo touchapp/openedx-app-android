@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.update
 import org.openedx.core.data.storage.CorePreferences
 import org.openedx.core.domain.model.VideoPlaybackSpeed
 import org.openedx.core.domain.model.VideoQuality
+import org.openedx.core.extension.isTrue
 import org.openedx.core.module.TranscriptManager
 import org.openedx.core.system.connection.NetworkConnection
 import org.openedx.core.system.notifier.CourseNotifier
@@ -260,8 +261,11 @@ class EncodedVideoUnitViewModel(
         .build()
 
     @UnstableApi
-    fun enterFullscreen() {
+    fun enterFullscreen(): Boolean {
+        if (state.value.isCastActive) return false
+        isPlaying = getActivePlayer()?.isPlaying.isTrue()
         applyTrackSelector(isSubtitlesDisabled = false)
+        return true
     }
 
     @UnstableApi

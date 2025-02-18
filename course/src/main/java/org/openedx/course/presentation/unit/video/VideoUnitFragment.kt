@@ -25,7 +25,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import org.openedx.core.extension.computeWindowSizeClasses
 import org.openedx.core.extension.dpToPixel
-import org.openedx.core.extension.isTrue
 import org.openedx.core.extension.objectToString
 import org.openedx.core.extension.stringToObject
 import org.openedx.core.presentation.dialog.appreview.AppReviewManager
@@ -208,12 +207,9 @@ class VideoUnitFragment : Fragment(R.layout.fragment_video_unit) {
             )
 
             playerView.setFullscreenButtonClickListener {
-                if (viewModel.state.value.isCastActive)
-                    return@setFullscreenButtonClickListener
-
-                viewModel.isPlaying = viewModel.getActivePlayer()?.isPlaying.isTrue()
-                viewModel.enterFullscreen()
-                VideoFullScreenFragment.newInstance().show(childFragmentManager, VideoFullScreenFragment.TAG)
+                if (viewModel.enterFullscreen()) {
+                    VideoFullScreenFragment.newInstance().show(childFragmentManager, VideoFullScreenFragment.TAG)
+                }
             }
         }
     }
