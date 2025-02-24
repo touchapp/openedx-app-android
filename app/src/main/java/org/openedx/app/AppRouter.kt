@@ -24,7 +24,6 @@ import org.openedx.course.presentation.handouts.HandoutsType
 import org.openedx.course.presentation.handouts.HandoutsWebViewFragment
 import org.openedx.course.presentation.section.CourseSectionFragment
 import org.openedx.course.presentation.unit.container.CourseUnitContainerFragment
-import org.openedx.course.presentation.unit.video.VideoFullScreenFragment
 import org.openedx.course.presentation.unit.video.YoutubeVideoFullScreenFragment
 import org.openedx.course.settings.download.DownloadQueueFragment
 import org.openedx.courses.presentation.AllEnrolledCoursesFragment
@@ -271,20 +270,6 @@ class AppRouter :
                 mode = mode
             ),
             FragmentTransaction.TRANSIT_FRAGMENT_FADE
-        )
-    }
-
-    override fun navigateToFullScreenVideo(
-        fm: FragmentManager,
-        videoUrl: String,
-        videoTime: Long,
-        blockId: String,
-        courseId: String,
-        isPlaying: Boolean,
-    ) {
-        replaceFragmentWithBackStack(
-            fm,
-            VideoFullScreenFragment.newInstance(videoUrl, videoTime, blockId, courseId, isPlaying)
         )
     }
 

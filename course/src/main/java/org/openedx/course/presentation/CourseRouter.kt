@@ -37,15 +37,6 @@ interface CourseRouter {
         mode: CourseViewMode
     )
 
-    fun navigateToFullScreenVideo(
-        fm: FragmentManager,
-        videoUrl: String,
-        videoTime: Long,
-        blockId: String,
-        courseId: String,
-        isPlaying: Boolean
-    )
-
     fun navigateToFullScreenYoutubeVideo(
         fm: FragmentManager,
         videoUrl: String,
